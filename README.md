@@ -34,14 +34,18 @@ The dockerfile is located in C:\rustdev\container\
 ## Deploy the container using Docker Desktop
 
 We build the image which we call **rust-ubuntu-dev** by running from within from C:\\rustdev\container\, we run: 
-```docker build -t rust-ubuntu-dev .```
+```
+    docker build -t rust-ubuntu-dev .
+```
 
 We then launch the container, exposing the port 2222 for SSH connexion:
-```docker run -d \
+```
+    docker run -d \
       -p 2222:22 \
       -v C:/rustdev/projects:/workspace \
       --name rust-dev-container \
-      rust-ubuntu-dev```
+      rust-ubuntu-dev
+```
 
 The code will be persisted located in C:\rust-dev\projects\, which is mapped into /workspace (which belongs to 'rustdev' user).
 
