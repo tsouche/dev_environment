@@ -1,6 +1,6 @@
 FROM ubuntu:24.04
 
-# Mettre à jour les paquets et installer les dépendances de base
+# Update packages and basic dependencies
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y \
     curl \
@@ -12,7 +12,7 @@ RUN apt-get update && apt-get upgrade -y && \
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
-# Créer l'utilisateur rustdev avec un mot de passe défini
+# create 'rustdev' user with its password, and add it to the sudo group
 ARG USERNAME=rustdev
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
@@ -24,30 +24,28 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && usermod -aG sudo $USERNAME \
     && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USERNAME
 
-# Configurer le répertoire de travail
+# Set teh working directory
 WORKDIR /home/$USERNAME
 
-# Installer Rust via rustup pour l'utilisateur rustdev
+# Install Rust via rustup for the 'rustdev' user
 USER $USERNAME
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
 
-# Ajouter Cargo au PATH
+# add Cargo to PATH
 ENV PATH="/home/$USERNAME/.cargo/bin:${PATH}"
 
-# Revenir à root pour configurer SSH
+# Shift back to 'root' user and configure SSH
 USER root
-
-# Configurer le serveur SSH
 RUN mkdir /var/run/sshd && \
     sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
     sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 
-# Exposer le port SSH
+# Expose the SSH port
 EXPOSE 22
 
-# Créer un répertoire partagé pour le code (sera monté en volume)
+# Create a shared directory for the code: it will be mounted as a volume
 RUN mkdir -p /workspace && chown $USERNAME:$USERNAME /workspace
 
-# Commande par défaut : démarrer SSH
+# Default command: run SSH server
 CMD ["/usr/sbin/sshd", "-D"]
