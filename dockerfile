@@ -30,12 +30,13 @@ RUN groupadd --gid ${USER_GID} ${GROUPNAME} || true && \
 # Set the working directory
 WORKDIR /home/${USERNAME}
 
-# Install Rust via rustup for the 'rustdev' user
+# Install Rust via rustup for the 'rustdev' user and ensure toolchain is set
 USER ${USERNAME}
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && \
     . /home/${USERNAME}/.cargo/env && \
     /home/${USERNAME}/.cargo/bin/rustup default stable && \
-    /home/${USERNAME}/.cargo/bin/cargo --version
+    /home/${USERNAME}/.cargo/bin/cargo --version && \
+    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> $HOME/.bashrc
 
 # Add Cargo to PATH
 ENV PATH="/home/${USERNAME}/.cargo/bin:${PATH}"
