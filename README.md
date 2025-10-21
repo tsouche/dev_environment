@@ -29,7 +29,7 @@ The container is defined with a dockerfile, in order to garantee version control
 - add rustdev to the **sudo group** (will give more flexibility later, in need be)
 - use **/workspace** as code directory: we will pesist the data (on the laptop) via a volume
 
-The dockerfile is located in C:\rustdev\container\
+The dockerfile is located in ```C:\rustdev\container\```
 
 ## Deploy the container using Docker Desktop
 
@@ -47,7 +47,7 @@ We then launch the container, exposing the port 2222 for SSH connexion:
       rust-ubuntu-dev
 ```
 
-The code will be persisted in C:\rust-dev\projects\, which is mapped into /workspace (which belongs to 'rustdev' user).
+The code will be persisted in ```C:\rust-dev\projects\```, which is mapped into ```/workspace``` (which belongs to 'rustdev' user).
 
 ## VS code configuration
 
