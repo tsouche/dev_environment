@@ -21,7 +21,7 @@ ARG PASSWORD=Hp77M&zzu\$JoG1
 
 # Create 'rustdev' user with its password, and add it to the sudo group
 RUN groupadd --gid ${USER_GID} ${GROUPNAME} || true && \
-    useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME} || true && \
+    useradd --uid ${USER_UID} --gid ${USER_GID} --shell /bin/bash -m ${USERNAME} || true && \
     echo "${USERNAME}:${PASSWORD}" | chpasswd && \
     usermod -aG sudo ${USERNAME} && \
     echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/${USERNAME} && \
