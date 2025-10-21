@@ -15,11 +15,12 @@ RUN apt-get update && apt-get upgrade -y && \
 # Define ARG variables BEFORE the user creation RUN command
 ARG USERNAME=rustdev
 ARG USER_UID=1026
-ARG USER_GID=100
+ARG GROUPNAME=rustdevteam
+ARG USER_GID=110
 ARG PASSWORD=Hp77M&zzu\$JoG1
 
 # Create 'rustdev' user with its password, and add it to the sudo group
-RUN groupadd --gid ${USER_GID} ${USERNAME} || true && \
+RUN groupadd --gid ${USER_GID} ${GROUPNAME} || true && \
     useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME} || true && \
     echo "${USERNAME}:${PASSWORD}" | chpasswd && \
     usermod -aG sudo ${USERNAME} && \
@@ -47,7 +48,7 @@ RUN mkdir -p /var/run/sshd && \
 EXPOSE 22
 
 # Create a shared directory for the code: it will be mounted as a volume
-RUN mkdir -p /workspace && chown ${USERNAME}:${USERNAME} /workspace
+RUN mkdir -p /workspace && chown ${USER_UID}:${USER_GID} /workspace
 
 # Default command: run SSH server
 CMD ["/usr/sbin/sshd", "-D"]
