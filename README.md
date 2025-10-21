@@ -51,276 +51,143 @@ The code will be persisted in ```C:\rust-dev\projects\```, which is mapped into 
 
 ## VS code configuration
 
-Nous utilisons l'extension Remote - SSH de VS Code pour connecter l'IDE comme client à ce "serveur" (le container).
+### Step 1: install the 'remote SSH' and 'rust-analyzer' extensions
+Go to the Extensions view (`Ctrl+Shift+X` or click the Extensions icon in the left sidebar) and search for and install the following extensions:
+- **Remote - SSH** by Microsoft: This enables connecting to remote hosts (like your container) via SSH. It may prompt you to install the "Remote Development" pack if not already present.
+- **rust-analyzer** by rust-lang: This provides Rust-specific features like syntax highlighting, autocompletion, linting, debugging, and code navigation. Install it on the host first; you'll install it on the remote side later for optimal performance.
+- Restart VS Code if prompted to apply the changes.
 
-### Étape 2.1 : Installer les extensions nécessaires dans VS Code
-
-Ouvrez VS Code sur Windows 11.
-Allez dans l'onglet Extensions (Ctrl+Shift+X).
-Installez "Remote - SSH" (par Microsoft). Cela inclut le pack Remote Development si nécessaire.
-(Optionnel mais recommandé pour Rust) : Installez "rust-analyzer" (par rust-lang). Vous l'installerez aussi sur le remote plus tard.
-
-### Étape 2.2 : Configurer la connexion SSH
-
-Ouvrez le fichier de configuration SSH : Appuyez sur Ctrl+Shift+P (Command Palette), tapez "Remote-SSH: Open Configuration File", et sélectionnez le fichier par défaut (généralement C:\Users\VOTRE_USER\.ssh\config).
-Ajoutez ce bloc au fichier (créez-le s'il n'existe pas) :
-textHost rust-container
-    HostName localhost
-    Port 2222
-    User root
-
-Sauvegardez. Cela définit une connexion nommée "rust-container" vers localhost:2222 (le port mappé du container).
-
-### Étape 2.3 : Se connecter au container
-
-Dans la Command Palette (Ctrl+Shift+P), tapez "Remote-SSH: Connect to Host".
-Sélectionnez "rust-container".
-Entrez le mot de passe que vous avez défini dans le Dockerfile (ex. 'monmotdepasse').
-VS Code se connecte : Vous verrez un indicateur vert en bas à gauche indiquant "SSH: rust-container".
-
-### Étape 2.4 : Ouvrir un dossier et configurer pour Rust
-
-Une fois connecté, VS Code vous demande d'ouvrir un dossier. Choisissez /workspace (le volume monté, où votre code est synchronisé).
-Installez les extensions remote : Dans l'onglet Extensions, cherchez "rust-analyzer" et installez-la sur le remote (il y a un bouton "Install in SSH: rust-container").
-Créez un projet Rust test : Ouvrez un terminal dans VS Code (Ctrl+`), et exécutez :
-textcd /workspace
-cargo new mon_app_rust
-cd mon_app_rust
-cargo run
-
-VS Code devrait maintenant offrir l'autocomplétion, le linting, et le debugging pour Rust via rust-analyzer.
-
-
-Notes sur l'utilisation :
-
-Votre code est dans le dossier local monté (C:/chemin/vers/votre/projet), mais édité depuis le container (env Linux).
-Pour debugger : Ajoutez un fichier .vscode/launch.json dans votre projet avec une config Rust standard (rust-analyzer l'aide à générer).
-Si le container s'arrête, relancez-le avec docker start rust-dev-container et reconnectez-vous.
-Sécurité : Comme c'est local, pas de souci majeur, mais changez le mot de passe. Pour production, utilisez des clés SSH au lieu d'un password.
-Personnalisation : Ajoutez plus d'outils dans le Dockerfile (ex. apt-get install -y vim ou d'autres paquets), puis rebuild l'image.
-
-Si vous rencontrez des erreurs (ex. port en conflit), ajustez le port mappé (ex. -p 2223:22). Testez et adaptez ! Si besoin de plus de détails, fournissez les logs d'erreur.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-### Procedure to Set Up a Rust Development Environment in a Linux Container on Windows 11 Using Docker and VS Code
-
-This guide compiles and details all the steps from our previous discussions into a single, comprehensive procedure in English. It assumes you are using a Windows 11 laptop with Docker Desktop already installed (if not, download it from the official Docker website and enable WSL integration during setup). We will use VS Code as the IDE in "client" mode, connecting remotely to a Linux container (based on Ubuntu) running via Docker Desktop. The container will be pre-configured with Rust tooling, an SSH server for remote access, and a non-root user `rustdev` for security.
-
-The Dockerfile will be placed in `C:\rustdev\container`. The workspace (where your code lives) will be mounted from `C:\rustdev\projects` on your host to `/workspace` in the container, ensuring your code is persisted and synchronized.
-
-We'll cover:
-- Writing the Dockerfile
-- Building the Docker image
-- Deploying (running) the container
-- Installing VS Code extensions
-- Connecting VS Code to the container
-- Testing the setup
-- Creating a new project by cloning a Git repo inside VS Code (in the container)
-
-Follow each step sequentially. If you encounter errors, check Docker logs with `docker logs rust-dev-container` or provide details for troubleshooting.
-
-#### Step 1: Write the Dockerfile
-1. Create the directory for the Dockerfile on your Windows host:
-   - Open File Explorer.
-   - Navigate to `C:\` and create a new folder named `rustdev`.
-   - Inside `rustdev`, create a subfolder named `container`.
-   - Your path should now be `C:\rustdev\container`.
-
-2. Create the Dockerfile file:
-   - Open VS Code (or Notepad) on your Windows host.
-   - Create a new file named `Dockerfile` (no extension) in `C:\rustdev\container`.
-   - Copy and paste the following content into the file exactly as shown. This Dockerfile creates an Ubuntu 24.04-based image with Rust installed for the user `rustdev`, SSH configured, and essential tools like Git. The password for `rustdev` is set to `Hp77M&zzu$JoG1` (a strong password; change it if needed, but update references accordingly).
-
-```
-FROM ubuntu:24.04
-
-# Update packages and basic dependencies
-RUN apt-get update && apt-get upgrade -y && \
-    apt-get install -y \
-    curl \
-    build-essential \
-    libssl-dev \
-    pkg-config \
-    git \
-    openssh-server \
-    sudo \
-    && rm -rf /var/lib/apt/lists/*
-
-# create 'rustdev' user with its password, and add it to the sudo group
-ARG USERNAME=rustdev
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
-ARG PASSWORD=Hp77M&zzu\$JoG1
-
-RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    && echo "$USERNAME:$PASSWORD" | chpasswd \
-    && usermod -aG sudo $USERNAME \
-    && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USERNAME
-
-# Set teh working directory
-WORKDIR /home/$USERNAME
-
-# Install Rust via rustup for the 'rustdev' user
-USER $USERNAME
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-
-# add Cargo to PATH
-ENV PATH="/home/$USERNAME/.cargo/bin:${PATH}"
-
-# Shift back to 'root' user and configure SSH
-USER root
-RUN mkdir /var/run/sshd && \
-    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config && \
-    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
-    sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
-
-# Expose the SSH port
-EXPOSE 22
-
-# Create a shared directory for the code: it will be mounted as a volume
-RUN mkdir -p /workspace && chown $USERNAME:$USERNAME /workspace
-
-# Default command: run SSH server
-CMD ["/usr/sbin/sshd", "-D"]
-```
-
-3. Save the file. Note: There is a typo in the original ("Set teh working directory" should be "Set the working directory"), but it doesn't affect functionality as it's a comment. You can fix it if desired.
-
-#### Step 2: Build the Docker Image
-1. Open a command prompt (PowerShell or CMD) on your Windows host.
-2. Navigate to the directory containing the Dockerfile:
-   ```
-   cd C:\rustdev\container
-   ```
-3. Build the image:
-   ```
-   docker build -t rust-ubuntu-dev .
-   ```
-   - This command builds an image named `rust-ubuntu-dev`.
-   - The process may take 5-10 minutes the first time due to package downloads.
-   - Verify the build succeeded with `docker images` (you should see `rust-ubuntu-dev` listed).
-
-#### Step 3: Deploy (Run) the Container
-1. Create the workspace directory on your host if it doesn't exist:
-   - In File Explorer, navigate to `C:\rustdev` and create a subfolder named `projects`.
-   - Your code will be stored here and mounted into the container.
-
-2. Run the container:
-   - In the same command prompt, execute:
-     ```
-     docker run -d -p 2222:22 -v C:\rustdev\projects:/workspace --name rust-dev-container rust-ubuntu-dev
-     ```
-     - `-d`: Runs in detached (background) mode.
-     - `-p 2222:22`: Maps the container's SSH port (22) to port 2222 on your host (to avoid conflicts).
-     - `-v C:\rustdev\projects:/workspace`: Mounts your local `projects` folder to `/workspace` in the container for code persistence.
-     - `--name rust-dev-container`: Names the container for easy reference.
-   - Verify it's running: `docker ps` (look for `rust-dev-container` in the list).
-   - If it stops, restart with `docker start rust-dev-container`.
-
-#### Step 4: Install VS Code Extensions
-1. Open VS Code on your Windows 11 host.
-2. Go to the Extensions view: Press `Ctrl+Shift+X` or click the Extensions icon in the sidebar.
-3. Search for and install:
-   - "Remote - SSH" by Microsoft (this enables remote connections; it may prompt to install the Remote Development pack).
-4. (Recommended for Rust development) Search for and install "rust-analyzer" by rust-lang (this provides autocompletion, linting, and debugging for Rust). You'll install it on the remote side later.
-
-#### Step 5: Connect VS Code to the Container
-1. Configure SSH in VS Code:
+### Step 2: Configure SSH Connection Settings
+1. Open the SSH configuration file in VS Code:
    - Press `Ctrl+Shift+P` to open the Command Palette.
-   - Type "Remote-SSH: Open Configuration File" and select the default SSH config file (usually `C:\Users\YourUsername\.ssh\config`; create it if it doesn't exist).
-   - Add the following block to the file:
+   - Type "Remote-SSH: Open Configuration File" and select it.
+   - Choose the default SSH config file (usually `C:\Users\YourUsername\.ssh\config` on Windows; replace `YourUsername` with your actual Windows username). If the file doesn't exist, VS Code will create it.
+2. Add the following configuration block to the file (append it if the file already has content):
+   ```
+   Host rust-container
+       HostName localhost
+       Port 2222
+       User rustdev
+   ```
+   - **Explanation**:
+     - `Host rust-container`: A friendly name for this connection profile.
+     - `HostName localhost`: Connects to the container via your local machine (since the port is mapped locally).
+     - `Port 2222`: The port mapped on your host (matching the `-p 2222:22` in your `docker run` command).
+     - `User rustdev`: The non-root user in the container.
+3. Save the file (Ctrl+S). This creates a reusable SSH profile.
+
+**Optional: Set up passwordless SSH for convenience** (recommended to avoid entering the password `Hp77M&zzu$JoG1` every time):
+1. On your Windows host, generate an SSH key pair if you don't have one:
+   - Open PowerShell or CMD.
+   - Run: `ssh-keygen -t ed25519 -C "your_email@example.com"` (replace with your email).
+   - Press Enter to accept the default location (`C:\Users\YourUsername\.ssh\id_ed25519`).
+   - Enter a passphrase if desired (or leave blank for no passphrase).
+2. Copy the public key to the container:
+   - Ensure the container is running (`docker ps` to check; start with `docker start rust-dev-container` if needed).
+   - Run:
      ```
-     Host rust-container
-         HostName localhost
-         Port 2222
-         User rustdev
+     docker exec -it rust-dev-container mkdir -p /home/rustdev/.ssh
+     cat C:\Users\YourUsername\.ssh\id_ed25519.pub | docker exec -i rust-dev-container sh -c 'cat >> /home/rustdev/.ssh/authorized_keys'
+     docker exec -it rust-dev-container chown -R rustdev:rustdevteam /home/rustdev/.ssh
+     docker exec -it rust-dev-container chmod 700 /home/rustdev/.ssh
+     docker exec -it rust-dev-container chmod 600 /home/rustdev/.ssh/authorized_keys
      ```
-   - Save the file. This sets up a connection profile to the container's SSH server.
+3. Test passwordless connection: Run `ssh rust-container` in PowerShell (you should connect without a password prompt).
 
-2. Connect to the remote host:
-   - In the Command Palette (`Ctrl+Shift+P`), type "Remote-SSH: Connect to Host".
-   - Select "rust-container".
-   - Enter the password: `Hp77M&zzu$JoG1` (you'll be prompted).
-   - VS Code will connect; look for a green indicator in the bottom-left corner saying "SSH: rust-container".
+#### Step 3: Connect VS Code to the Container
+1. In VS Code, open the Command Palette (`Ctrl+Shift+P`).
+2. Type "Remote-SSH: Connect to Host" and select it.
+3. Choose "rust-container" from the list of hosts.
+4. Enter the password `Hp77M&zzu$JoG1` if prompted (or skip if using passwordless SSH).
+   - VS Code will establish the connection. You'll see a green status indicator in the bottom-left corner: "SSH: rust-container".
+   - If there's an error (e.g., connection refused), ensure the container is running (`docker ps`) and the port mapping is correct.
 
-3. Open the workspace folder:
-   - Once connected, VS Code prompts to open a folder. Select `/workspace` (this is the mounted directory where your code lives).
-   - Install remote extensions: In the Extensions view, search for "rust-analyzer" and click "Install in SSH: rust-container" (this installs it on the remote side for better performance).
+#### Step 4: Open the Workspace and Install Remote Extensions
+1. Once connected, VS Code prompts you to open a folder on the remote machine.
+   - Select `/workspace` (this is the mounted directory where your code is persisted and synchronized with `C:\rustdev\projects` on your host).
+2. Install Rust extensions on the remote side for better performance:
+   - Go to the Extensions view (`Ctrl+Shift+X`).
+   - Search for "rust-analyzer".
+   - Click "Install in SSH: rust-container" (this installs it in the container's environment).
+3. (Optional) Install other useful extensions on the remote:
+   - "Cargo" by panicbit: For Cargo command integration.
+   - "crates" by serayuzgur: For managing Rust dependencies.
+   - "Better TOML" by bungcip: For editing Cargo.toml files.
+   - Install them via "Install in SSH: rust-container".
 
-(Optional: For passwordless login in the future, set up SSH keys. Generate a key pair on your host with `ssh-keygen`, then copy the public key to the container using `docker cp` or `ssh-copy-id`.)
-
-#### Step 6: Test the Setup
-1. Open a terminal in VS Code: Press `Ctrl+`` (backtick) or go to Terminal > New Terminal. It should open in the remote container (check the prompt shows something like `rustdev@...`).
-2. Verify the user and environment:
+#### Step 5: Test the Rust Toolchain in VS Code
+1. Open a terminal in VS Code:
+   - Press `Ctrl+`` (backtick) or go to Terminal > New Terminal.
+   - The terminal should open in the remote container (prompt shows `rustdev@container-id:/workspace$` or similar).
+2. Verify the Rust toolchain:
    ```
-   whoami  # Should output: rustdev
-   pwd     # Should output: /workspace (or cd /workspace first)
-   rustc --version  # Should show the Rust compiler version (e.g., rustc 1.81.0)
-   cargo --version  # Should show Cargo version
-   git --version    # Should confirm Git is installed
+   rustc --version  # Should output: rustc 1.90.0 (or your installed version)
+   cargo --version  # Should output: cargo 1.90.0 (or your installed version)
+   rustup toolchain list  # Should show: stable-x86_64-unknown-linux-gnu (default)
    ```
-3. Create a simple Rust test project:
+3. Create a test Rust project:
    ```
-   cargo new test_rust_app
-   cd test_rust_app
-   cargo build  # Builds the app
+   cargo new test_project
+   cd test_project
+   cargo build  # Builds the project
    cargo run    # Runs it (should print "Hello, world!")
    ```
-4. Check file synchronization: Create or edit a file in `/workspace` (e.g., via VS Code), then check it appears/updates in `C:\rustdev\projects` on your host.
-5. Disconnect and reconnect: In VS Code, click the remote indicator and select "Close Remote Connection". Reconnect as in Step 5 to ensure persistence.
+   - If this works, the toolchain is accessible.
 
-If everything works, your Rust dev environment is ready.
+#### Step 6: Efficiently Use the Rust Toolchain in VS Code
+1. **Edit and Navigate Code**:
+   - Open `src/main.rs` in VS Code (from `/workspace/test_project`).
+   - rust-analyzer should provide:
+     - Autocompletion: Type `println!(` and press Ctrl+Space for suggestions.
+     - Linting: Errors/warnings appear inline (e.g., red squiggles).
+     - Go to Definition: Right-click a symbol and select "Go to Definition".
+     - Hover for docs: Hover over `println!` for documentation.
 
-#### Step 7: Create a New Project by Cloning a Git Repo Inside VS Code (in the Container)
-1. Ensure you're connected to the remote container in VS Code (from Step 5).
-2. Open a terminal in VS Code (`Ctrl+``) and navigate to the workspace:
-   ```
-   cd /workspace
-   ```
-3. Clone a Git repo:
-   - For example, to clone a sample Rust repo (replace with your own URL, e.g., from GitHub):
+2. **Debugging**:
+   - Create a debug configuration:
+     - Go to Run > Add Configuration (or open `.vscode/launch.json` in the project folder).
+     - Select "Rust" or add manually:
+       ```json
+       {
+           "version": "0.2.0",
+           "configurations": [
+               {
+                   "type": "lldb",
+                   "request": "launch",
+                   "name": "Debug executable 'test_project'",
+                   "cargo": {
+                       "args": ["build", "--bin=test_project", "--package=test_project"]
+                   },
+                   "args": [],
+                   "cwd": "${workspaceFolder}"
+               }
+           ]
+       }
+       ```
+   - Set breakpoints: Click in the gutter next to line numbers in `main.rs`.
+   - Start debugging: Press F5 or go to Run > Start Debugging.
+   - Step through code using F10 (step over), F11 (step into), etc.
+
+3. **Cargo Commands Integration**:
+   - Use the Command Palette (`Ctrl+Shift+P`):
+     - Type "Cargo" to see commands like "Cargo: Build", "Cargo: Run", "Cargo: Test".
+   - Or use the integrated terminal for custom commands (e.g., `cargo check`, `cargo clippy` for linting).
+
+4. **Version Control with Git**:
+   - Since Git is installed in the container, initialize a repo:
      ```
-     git clone https://github.com/rust-lang/rust-by-example.git my_rust_project
+     git init
+     git add .
+     git commit -m "Initial commit"
      ```
-     - This clones the repo into `/workspace/my_rust_project`.
-   - If the repo requires authentication (e.g., private repo), set up Git credentials or SSH keys in the container first (e.g., `git config --global user.name "Your Name"` and use `ssh-keygen` for keys).
+   - Use VS Code's Source Control view (left sidebar) for commits, pushes, etc. (connect to a remote repo like GitHub if needed).
 
-4. Open the project in VS Code:
-   - In the File Explorer sidebar (remote side), navigate to `/workspace/my_rust_project`.
-   - Right-click and select "Open Folder" (or use File > Open Folder and select the path).
-   - VS Code reloads with the project open. rust-analyzer should activate automatically for Rust features.
+5. **Efficient Workflow Tips**:
+   - **Code Synchronization**: Changes in `/workspace` automatically sync to `C:\rustdev\projects` on your host (due to the volume mount). Edit files in VS Code, and they're persisted even if the container stops.
+   - **Reconnect Quickly**: If disconnected, use Command Palette > "Remote-SSH: Connect to Host" > "rust-container".
+   - **Performance**: Run resource-intensive tasks (e.g., `cargo build --release`) in the terminal; the container isolates them from your host.
+   - **Updates**: To update Rust, run `rustup update` in the remote terminal.
+   - **Troubleshooting**: If rust-analyzer doesn't activate, reload VS Code (Command Palette > "Reload Window"). Check VS Code's Output panel (View > Output > Rust Analyzer) for errors.
+   - **Stop/Start Container**: If the container stops, restart with `docker start rust-dev-container` on your host, then reconnect in VS Code.
 
-5. Build and run the project:
-   - In the terminal:
-     ```
-     cd my_rust_project
-     cargo build
-     cargo run  # Or follow the repo's instructions
-     ```
-   - Use VS Code's debugger: Press `F5` or go to Run > Start Debugging (rust-analyzer helps configure `launch.json` if needed).
-
-6. Commit changes (optional):
-   - Edit files in VS Code.
-   - In the terminal: `git add .`, `git commit -m "Initial changes"`, `git push` (if applicable).
-
-Your code is now deployed directly in the container's `/workspace`, synchronized with your host, and ready for development. For multiple projects, create subfolders in `/workspace`. If you stop the container, your code persists on the host. Restart as needed with `docker start rust-dev-container`.
+This setup provides an efficient, isolated Rust development environment in Linux while using VS Code on Windows. If you encounter errors (e.g., connection issues), check Docker logs (`docker logs rust-dev-container`) or provide details for further help.
