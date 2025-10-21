@@ -14,8 +14,8 @@ RUN apt-get update && apt-get upgrade -y && \
 
 # Define ARG variables BEFORE the user creation RUN command
 ARG USERNAME=rustdev
-ARG USER_UID=1000
-ARG USER_GID=1000
+ARG USER_UID=1026
+ARG USER_GID=100
 ARG PASSWORD=Hp77M&zzu\$JoG1
 
 # Create 'rustdev' user with its password, and add it to the sudo group
