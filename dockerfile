@@ -33,6 +33,7 @@ WORKDIR /home/${USERNAME}
 # Install Rust via rustup for the 'rustdev' user
 USER ${USERNAME}
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+RUN rustup default stable
 
 # Add Cargo to PATH
 ENV PATH="/home/${USERNAME}/.cargo/bin:${PATH}"
