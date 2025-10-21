@@ -51,6 +51,8 @@ The code will be persisted in ```C:\rust-dev\projects\```, which is mapped into 
 
 ## VS code configuration
 
+### Step 0 : check that Git is installed on the laptop !!!
+
 ### Step 1: install the 'remote SSH' and 'rust-analyzer' extensions
 Go to the Extensions view (`Ctrl+Shift+X` or click the Extensions icon in the left sidebar) and search for and install the following extensions:
 - **Remote - SSH** by Microsoft: This enables connecting to remote hosts (like your container) via SSH. It may prompt you to install the "Remote Development" pack if not already present.
