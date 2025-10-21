@@ -37,8 +37,8 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
     /home/${USERNAME}/.cargo/bin/rustup default stable && \
     /home/${USERNAME}/.cargo/bin/cargo --version && \
     /home/${USERNAME}/.cargo/bin/rustc --version && \
-    echo '. /home/${USERNAME}/.cargo/env' >> /home/${USERNAME}/.bashrc && \
-    echo '. /home/${USERNAME}/.cargo/env' >> /home/${USERNAME}/.profile
+    bash -c "echo '. /home/${USERNAME}/.cargo/env' >> /home/${USERNAME}/.bashrc" && \
+    bash -c "echo '. /home/${USERNAME}/.cargo/env' >> /home/${USERNAME}/.profile"
 
 # Add Cargo to PATH for the container's default environment
 ENV PATH="/home/${USERNAME}/.cargo/bin:${PATH}"
