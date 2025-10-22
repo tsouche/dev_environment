@@ -39,12 +39,15 @@ We build the image which we call **```rust-ubuntu-dev```** by running from withi
 ```
 
 We then launch the container, exposing the port 2222 for SSH connexion:
-```
+```bash
     docker run -d \
       -p 2222:22 \
       -v C:/rustdev/projects:/workspace \
       --name rust-dev-container \
       rust-ubuntu-dev
+```
+or
+```bash
     docker run -d -p 2222:22 -v C:/rustdev/projects:/workspace --name rust-dev-container rust-ubuntu-dev
 ```
 
