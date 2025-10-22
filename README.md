@@ -51,7 +51,7 @@ The code will be persisted in ```C:\rust-dev\projects\```, which is mapped into 
 
 ## VS code configuration
 
-### Step 0 : check that Git is installed on the laptop !!!
+NB: you won't need Git installed in Win11 on the laptop, since you'll use the native git installed in the Ubuntu container.
 
 ### Step 1: install the 'remote SSH' and 'rust-analyzer' extensions
 Go to the Extensions view (`Ctrl+Shift+X` or click the Extensions icon in the left sidebar) and search for and install the following extensions:
@@ -81,18 +81,21 @@ Go to the Extensions view (`Ctrl+Shift+X` or click the Extensions icon in the le
 **Optional: Set up passwordless SSH for convenience** (recommended to avoid entering the password `Hp77M&zzu$JoG1` every time):
 1. On your Windows host, generate an SSH key pair if you don't have one:
    - Open PowerShell or CMD.
-   - Run: `ssh-keygen -t ed25519 -C "your_email@example.com"` (replace with your email).
+   - Run (having replaced with your own email):
+       ```bash
+         ssh-keygen -t ed25519 -C "your_email@example.com"  
+       ``` 
    - Press Enter to accept the default location (`C:\Users\YourUsername\.ssh\id_ed25519`).
    - Enter a passphrase if desired (or leave blank for no passphrase).
 2. Copy the public key to the container:
    - Ensure the container is running (`docker ps` to check; start with `docker start rust-dev-container` if needed).
    - Run:
-     ```
-     docker exec -it rust-dev-container mkdir -p /home/rustdev/.ssh
-     cat C:\Users\YourUsername\.ssh\id_ed25519.pub | docker exec -i rust-dev-container sh -c 'cat >> /home/rustdev/.ssh/authorized_keys'
-     docker exec -it rust-dev-container chown -R rustdev:rustdevteam /home/rustdev/.ssh
-     docker exec -it rust-dev-container chmod 700 /home/rustdev/.ssh
-     docker exec -it rust-dev-container chmod 600 /home/rustdev/.ssh/authorized_keys
+     ```bash
+         docker exec -it rust-dev-container mkdir -p /home/rustdev/.ssh
+         cat C:\Users\YourUsername\.ssh\id_ed25519.pub | docker exec -i rust-dev-container sh -c 'cat >> /home/rustdev/.ssh/authorized_keys'
+         docker exec -it rust-dev-container chown -R rustdev:rustdevteam /home/rustdev/.ssh
+         docker exec -it rust-dev-container chmod 700 /home/rustdev/.ssh
+         docker exec -it rust-dev-container chmod 600 /home/rustdev/.ssh/authorized_keys
      ```
 3. Test passwordless connection: Run `ssh rust-container` in PowerShell (you should connect without a password prompt).
 
