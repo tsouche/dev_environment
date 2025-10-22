@@ -45,6 +45,7 @@ We then launch the container, exposing the port 2222 for SSH connexion:
       -v C:/rustdev/projects:/workspace \
       --name rust-dev-container \
       rust-ubuntu-dev
+    docker run -d -p 2222:22 -v C:/rustdev/projects:/workspace --name rust-dev-container rust-ubuntu-dev
 ```
 
 The code will be persisted in ```C:\rust-dev\projects\```, which is mapped into ```/workspace``` (which belongs to 'rustdev' user).
