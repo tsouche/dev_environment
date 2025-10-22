@@ -91,17 +91,18 @@ Go to the Extensions view (`Ctrl+Shift+X` or click the Extensions icon in the le
        ``` 
    - Press Enter to accept the default location (`C:\Users\YourUsername\.ssh\id_ed25519`).
    - Enter a passphrase if desired (or leave blank for no passphrase).
-2. Copy the public key to the container:
+2. Copy the public key to the container (transiting via the volume):
+   - copy the `id_ed25519.pub` file to the `C:\rustdev\projects`directory and rename the file as `authorized_keys` (with no extension)
    - Ensure the container is running (`docker ps` to check; start with `docker start rust-dev-container` if needed).
-   - Run:
+   - Run from the Windows shell:
      ```bash
          docker exec -it rust-dev-container mkdir -p /home/rustdev/.ssh
-         cat C:\Users\YourUsername\.ssh\id_ed25519.pub | docker exec -i rust-dev-container sh -c 'cat >> /home/rustdev/.ssh/authorized_keys'
+         docker exec -it rust-dev-container mv /workspace/authorized_keys /home/rustdev/.ssh'
          docker exec -it rust-dev-container chown -R rustdev:rustdevteam /home/rustdev/.ssh
          docker exec -it rust-dev-container chmod 700 /home/rustdev/.ssh
          docker exec -it rust-dev-container chmod 600 /home/rustdev/.ssh/authorized_keys
      ```
-3. Test passwordless connection: Run `ssh rust-container` in PowerShell (you should connect without a password prompt).
+4. Test passwordless connection: Run `ssh rust-container` in PowerShell (you should connect without a password prompt).
 
 #### Step 3: Connect VS Code to the Container
 1. In VS Code, open the Command Palette (`Ctrl+Shift+P`).
@@ -120,8 +121,8 @@ Go to the Extensions view (`Ctrl+Shift+X` or click the Extensions icon in the le
    - Click "Install in SSH: rust-container" (this installs it in the container's environment).
 3. (Optional) Install other useful extensions on the remote:
    - "Cargo" by panicbit: For Cargo command integration.
-   - "crates" by serayuzgur: For managing Rust dependencies.
-   - "Better TOML" by bungcip: For editing Cargo.toml files.
+   - "Dependi" by Fill Labs (dependi.io): For managing Rust dependencies.
+   - "Even Better TOML" by tamasfe: For editing Cargo.toml files.
    - Install them via "Install in SSH: rust-container".
 
 #### Step 5: Test the Rust Toolchain in VS Code
