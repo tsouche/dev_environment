@@ -96,6 +96,29 @@ ssh-keygen -t ed25519 -f rust_dev_key -N ""
 # 5. Connect via VS Code Remote-SSH to localhost:<your_SSH_PORT>
 ```
 
+### Using SET Game Backend Configuration (Example)
+
+For the SET card game project with v0.2 naming conventions:
+
+```bash
+# 1. Use the provided SET game configuration
+cp .env.set_backend .env
+
+# 2. Generate SSH key pair (if needed)
+ssh-keygen -t ed25519 -f rust_dev_key -N ""
+
+# 3. Deploy
+./deploy-v03.sh
+
+# This creates:
+# - Project directory: set_backend/
+# - Database: set_game_db
+# - Collections: games, players, scores
+# - Containers: set-rust-dev, set-mongodb, set-mongo-express
+
+# See SET-GAME-CONFIG.md for complete guide
+```
+
 ---
 
 ## ⚙️ Configuration
@@ -205,6 +228,19 @@ Template environment configuration file with all available settings documented. 
 - 85+ configuration variables
 - Detailed comments for each setting
 - Sensible defaults for quick start
+
+#### `.env.set_backend` (Example Configuration)
+Ready-to-use configuration for the SET card game backend project. Preserves all v0.2 naming conventions.
+
+**Use Case:** Migrating from v0.2 or maintaining SET game project structure.
+
+**Usage:**
+```bash
+cp .env.set_backend .env
+./deploy-v03.sh
+```
+
+**See:** `SET-GAME-CONFIG.md` for complete guide.
 - Grouped by category (project, ports, database, etc.)
 
 #### `.env` (You Create This)

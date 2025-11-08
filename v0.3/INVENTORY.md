@@ -11,9 +11,13 @@
 ```
 v0.3/
 ├── .env.example                    # Configuration template (85+ variables)
+├── .env.set_backend                # SET game specific configuration example
 ├── README-v03.md                   # Complete documentation (22 KB)
 ├── VERSION.md                      # Release notes and changelog (15 KB)
 ├── MIGRATION.md                    # Migration guide from v0.2 (18 KB)
+├── SET-GAME-CONFIG.md              # SET game configuration guide
+├── UPDATE-SUMMARY.md               # Dockerfile rename update summary
+├── INVENTORY.md                    # This file - complete inventory
 ├── authorized_keys                 # SSH public key for container access
 ├── dockerfile.v0.3                 # Container image definition (6 KB)
 ├── docker-compose-v03.yml          # Multi-container orchestration (3 KB)
@@ -21,7 +25,7 @@ v0.3/
 └── deploy-v03.ps1                  # PowerShell deployment script (13 KB)
 ```
 
-**Total:** 8 files, ~101 KB
+**Total:** 13 files
 
 ---
 
@@ -54,6 +58,29 @@ v0.3/
 cp .env.example .env
 # Edit .env to customize your environment
 ```
+
+#### `.env.set_backend`
+**Size:** 6 KB  
+**Purpose:** SET card game backend specific configuration  
+**Status:** ✅ Complete - Ready-to-use example
+
+**Contents:**
+- Complete configuration for SET game project
+- Preserves v0.2 naming conventions:
+  - PROJECT_DIR=set_backend
+  - DB_NAME=set_game_db
+  - Collections: games, players, scores
+- Detailed comments explaining SET game schema
+- Example Rust connection code
+- Deployment and usage instructions
+
+**Usage:**
+```bash
+cp .env.set_backend .env
+./deploy-v03.sh
+```
+
+**Documentation:** See `SET-GAME-CONFIG.md` for complete guide
 
 ---
 
@@ -115,6 +142,59 @@ cp .env.example .env
 **Size:** 18 KB  
 **Purpose:** v0.2 to v0.3 migration guide  
 **Status:** ✅ Complete
+
+**Contents:**
+- Migration overview (why migrate)
+- Three migration strategies:
+  1. Fresh Start (recommended)
+  2. Preserve v0.2 Names
+  3. Hybrid Approach
+- Step-by-step instructions for each strategy
+- Verification checklist
+- Troubleshooting guide
+- Rollback procedure
+- Best practices
+- Migration timeline
+
+**Estimated Time:** 15-30 minutes
+
+#### `SET-GAME-CONFIG.md`
+**Size:** 10 KB  
+**Purpose:** SET card game backend configuration guide  
+**Status:** ✅ Complete - Project-specific example
+
+**Contents:**
+- Quick start with `.env.set_backend`
+- Complete configuration explanation
+- Deployment steps
+- VS Code and MongoDB connection guides
+- SET game database schema (games, players, scores)
+- Rust code examples for database connection
+- v0.2 vs v0.3 comparison for SET project
+- Advanced usage (multiple environments)
+- Troubleshooting specific to SET game
+
+**Use Case:** Example showing how to use v0.3 for a specific project (SET game) while preserving v0.2 naming
+
+#### `UPDATE-SUMMARY.md`
+**Size:** 8 KB  
+**Purpose:** Documents dockerfile rename and authorized_keys addition  
+**Status:** ✅ Complete
+
+**Contents:**
+- Changelog for dockerfile.v0.2 → dockerfile.v0.3 rename
+- Files updated (6 configuration and documentation files)
+- authorized_keys setup and usage
+- Verification steps
+- Deployment impact analysis
+- Change statistics
+
+**Use Case:** Reference for the dockerfile rename update (November 8, 2025)
+
+#### `INVENTORY.md`
+**Size:** 15 KB  
+**Purpose:** Complete file inventory and reference  
+**Status:** ✅ Complete - This file
 
 **Contents:**
 - Migration overview (why migrate)
