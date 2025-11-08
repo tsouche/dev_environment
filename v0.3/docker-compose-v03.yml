@@ -10,7 +10,7 @@ services:
   rust-dev:
     build:
       context: .
-      dockerfile: dockerfile.v0.2
+      dockerfile: dockerfile.v0.3
       args:
         - USER_UID=${USER_UID:-1026}
         - USER_GID=${USER_GID:-110}

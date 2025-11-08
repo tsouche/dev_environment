@@ -27,7 +27,7 @@ NC='\033[0m' # No Color
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_NAME="rust-dev-environment-v03"
-DOCKERFILE="dockerfile.v0.2"
+DOCKERFILE="dockerfile.v0.3"
 COMPOSE_FILE="docker-compose-v03.yml"
 
 # Load .env file if it exists

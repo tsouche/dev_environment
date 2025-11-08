@@ -19,7 +19,7 @@ $ErrorActionPreference = "Stop"
 # Configuration
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectName = "rust-dev-environment-v03"
-$Dockerfile = "dockerfile.v0.2"
+$Dockerfile = "dockerfile.v0.3"
 $ComposeFile = "docker-compose-v03.yml"
 
 # Load .env file if it exists
@@ -38,7 +38,11 @@ if (Test-Path $EnvFile) {
 }
 
 # Set defaults if not in .env
+# Configuration variables with defaults
+$ProjectName = if ($env:PROJECT_NAME) { $env:PROJECT_NAME } else { "rust_project" }
 $ProjectDir = if ($env:PROJECT_DIR) { $env:PROJECT_DIR } else { "rust_project" }
+$Dockerfile = "dockerfile.v0.3"
+$ComposeFile = "docker-compose-v03.yml"
 $DbName = if ($env:DB_NAME) { $env:DB_NAME } else { "rust_app_db" }
 $DbUser = if ($env:DB_USER) { $env:DB_USER } else { "app_user" }
 $DbPassword = if ($env:DB_PASSWORD) { $env:DB_PASSWORD } else { "app_password" }
