@@ -48,9 +48,16 @@ v0.4/
 
 ### Step 1: Deploy Development Environment
 
+**For Linux systems:**
 ```bash
 cd v0.4
 ./deploy-v04.sh --dev
+```
+
+**For Windows 11 systems:**
+```powershell
+cd v0.4
+./deploy-v04.ps1 --dev
 ```
 
 This will:
@@ -104,8 +111,14 @@ cargo run
 
 ### Deploy
 
+**For Linux systems:**
 ```bash
 ./deploy-v04.sh --test
+```
+
+**For Windows 11 systems:**
+```powershell
+./deploy-v04.ps1 --test
 ```
 
 ### Configure Synology Reverse Proxy
@@ -137,8 +150,14 @@ Remove "CHANGEME_" prefix and use strong passwords (16+ characters).
 
 ### Deploy
 
+**For Linux systems:**
 ```bash
 ./deploy-v04.sh --prod
+```
+
+**For Windows 11 systems:**
+```powershell
+./deploy-v04.ps1 --prod
 ```
 
 The script will:

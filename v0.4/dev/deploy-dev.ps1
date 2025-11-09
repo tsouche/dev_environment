@@ -18,12 +18,12 @@ function Write-Header {
 
 function Write-Success {
     param([string]$Message)
-    Write-Host "✓ $Message" -ForegroundColor Green
+    Write-Host "[OK] $Message" -ForegroundColor Green
 }
 
 function Write-Warning-Custom {
     param([string]$Message)
-    Write-Host "⚠ $Message" -ForegroundColor Yellow
+    Write-Host "[WARNING] $Message" -ForegroundColor Yellow
 }
 
 # Load environment variables
@@ -72,24 +72,70 @@ Write-Success "Directories created"
 Write-Header "Configuring SSH Authentication"
 
 $sshKeySource = $null
+$sshPrivateKey = $null
 $sshKeyPaths = @(
-    "$env:USERPROFILE\.ssh\id_ed25519.pub",
-    "$env:USERPROFILE\.ssh\id_rsa.pub"
+    @{Public="$env:USERPROFILE\.ssh\id_ed25519.pub"; Private="$env:USERPROFILE\.ssh\id_ed25519"},
+    @{Public="$env:USERPROFILE\.ssh\id_rsa.pub"; Private="$env:USERPROFILE\.ssh\id_rsa"}
 )
 
-foreach ($keyPath in $sshKeyPaths) {
-    if (Test-Path $keyPath) {
-        $sshKeySource = $keyPath
+foreach ($keyPair in $sshKeyPaths) {
+    if (Test-Path $keyPair.Public) {
+        $sshKeySource = $keyPair.Public
+        $sshPrivateKey = $keyPair.Private
         break
     }
 }
 
 if ($null -ne $sshKeySource) {
     Copy-Item $sshKeySource "$ScriptDir\..\common\authorized_keys" -Force
-    Write-Success "Copied SSH public key"
+    Write-Success "Copied SSH public key: $sshKeySource"
 } else {
     Write-Warning-Custom "No SSH key found - creating placeholder"
+    Write-Warning-Custom "Generate a key with: ssh-keygen -t ed25519 -C 'your_email@example.com'"
     "# Add your SSH public key here" | Out-File -FilePath "$ScriptDir\..\common\authorized_keys" -Encoding ASCII
+}
+
+################################################################################
+# Configure SSH Config for VS Code
+################################################################################
+
+Write-Header "Configuring VS Code SSH Connection"
+
+$sshConfigPath = "$env:USERPROFILE\.ssh\config"
+$sshConfigDir = Split-Path $sshConfigPath -Parent
+
+# Ensure .ssh directory exists
+if (-not (Test-Path $sshConfigDir)) {
+    New-Item -ItemType Directory -Path $sshConfigDir -Force | Out-Null
+}
+
+# Read existing config or create empty
+$existingConfig = ""
+if (Test-Path $sshConfigPath) {
+    $existingConfig = Get-Content $sshConfigPath -Raw
+}
+
+# Check if rust-dev host already exists
+if ($existingConfig -notmatch "Host rust-dev") {
+    # Prepare the new host configuration
+    $newHostConfig = @"
+
+# Rust Development Environment v0.4 - Auto-generated
+Host rust-dev
+    HostName localhost
+    Port $($env:SSH_PORT)
+    User $($env:USERNAME)
+    IdentityFile $($sshPrivateKey -replace '\\','/')
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+
+"@
+    
+    # Append to config file
+    Add-Content -Path $sshConfigPath -Value $newHostConfig
+    Write-Success "Added 'rust-dev' to SSH config: $sshConfigPath"
+} else {
+    Write-Success "SSH config 'rust-dev' already exists in: $sshConfigPath"
 }
 
 ################################################################################
@@ -217,17 +263,16 @@ Write-Host "  - Project Dir:       $ProjectDir"
 Write-Host "  - Database:          $DbName"
 Write-Host ""
 Write-Host "Next Steps:" -ForegroundColor Blue
-Write-Host "  1. Add this to $env:USERPROFILE\.ssh\config:"
+Write-Host "  1. In VS Code, press Ctrl+Shift+P"
+Write-Host "  2. Type 'Remote-SSH: Connect to Host'"
+Write-Host "  3. Select 'rust-dev'"
+Write-Host "  4. Open folder: /workspace/$ProjectDir"
+Write-Host "  5. Run: cargo build"
 Write-Host ""
-Write-Host "     Host rust-dev"
-Write-Host "         HostName localhost"
-Write-Host "         Port $($env:SSH_PORT)"
-Write-Host "         User $($env:USERNAME)"
-Write-Host "         StrictHostKeyChecking no"
-Write-Host ""
-Write-Host "  2. Connect via VS Code Remote-SSH to 'rust-dev'"
-Write-Host "  3. Open folder: /workspace/$ProjectDir"
-Write-Host "  4. Run: cargo build"
+Write-Host "SSH Configuration:" -ForegroundColor Blue
+Write-Host "  - Host alias:        rust-dev"
+Write-Host "  - Config file:       $env:USERPROFILE\.ssh\config"
+Write-Host "  - Identity file:     $sshPrivateKey"
 Write-Host ""
 Write-Host "Useful Commands:" -ForegroundColor Blue
 Write-Host "  - Logs:      docker compose -f docker-compose-dev.yml logs -f"

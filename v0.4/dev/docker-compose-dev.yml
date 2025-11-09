@@ -21,8 +21,8 @@ services:
     hostname: ${HOSTNAME:-dev-host}
     
     ports:
-      - "${SSH_PORT:-2222}:22"          # SSH for VS Code Remote
-      - "${APP_PORT:-5665}:8080"        # Application web interface
+      - "${SSH_PORT:-2222}:22"
+      - "${APP_PORT:-5665}:8080"
     
     environment:
       - MONGODB_URI=mongodb://mongo-db:27017/${DB_NAME:-rust_app_db}

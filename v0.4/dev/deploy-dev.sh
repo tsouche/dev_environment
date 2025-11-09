@@ -62,18 +62,51 @@ print_success "Directories created"
 print_header "Configuring SSH Authentication"
 
 SSH_KEY_SOURCE=""
+SSH_PRIVATE_KEY=""
 if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
     SSH_KEY_SOURCE="$HOME/.ssh/id_ed25519.pub"
+    SSH_PRIVATE_KEY="$HOME/.ssh/id_ed25519"
 elif [ -f "$HOME/.ssh/id_rsa.pub" ]; then
     SSH_KEY_SOURCE="$HOME/.ssh/id_rsa.pub"
+    SSH_PRIVATE_KEY="$HOME/.ssh/id_rsa"
 fi
 
 if [ -n "$SSH_KEY_SOURCE" ]; then
     cp "$SSH_KEY_SOURCE" "$SCRIPT_DIR/../common/authorized_keys"
-    print_success "Copied SSH public key"
+    print_success "Copied SSH public key: $SSH_KEY_SOURCE"
 else
     print_warning "No SSH key found - creating placeholder"
+    print_warning "Generate a key with: ssh-keygen -t ed25519 -C 'your_email@example.com'"
     echo "# Add your SSH public key here" > "$SCRIPT_DIR/../common/authorized_keys"
+fi
+
+################################################################################
+# Configure SSH Config for VS Code
+################################################################################
+
+print_header "Configuring VS Code SSH Connection"
+
+SSH_CONFIG="$HOME/.ssh/config"
+mkdir -p "$HOME/.ssh"
+chmod 700 "$HOME/.ssh"
+
+# Check if rust-dev host already exists
+if ! grep -q "Host rust-dev" "$SSH_CONFIG" 2>/dev/null; then
+    cat >> "$SSH_CONFIG" << EOF
+
+# Rust Development Environment v0.4 - Auto-generated
+Host rust-dev
+    HostName localhost
+    Port ${SSH_PORT}
+    User ${USERNAME}
+    IdentityFile ${SSH_PRIVATE_KEY}
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+
+EOF
+    print_success "Added 'rust-dev' to SSH config: $SSH_CONFIG"
+else
+    print_success "SSH config 'rust-dev' already exists in: $SSH_CONFIG"
 fi
 
 ################################################################################
@@ -202,17 +235,16 @@ echo "  - Project Dir:       $PROJECT_DIR"
 echo "  - Database:          $DB_NAME"
 echo ""
 echo "Next Steps:"
-echo "  1. Add this to ~/.ssh/config:"
+echo "  1. In VS Code, press Ctrl+Shift+P"
+echo "  2. Type 'Remote-SSH: Connect to Host'"
+echo "  3. Select 'rust-dev'"
+echo "  4. Open folder: /workspace/$PROJECT_DIR"
+echo "  5. Run: cargo build"
 echo ""
-echo "     Host rust-dev"
-echo "         HostName localhost"
-echo "         Port ${SSH_PORT:-2222}"
-echo "         User ${USERNAME:-rustdev}"
-echo "         StrictHostKeyChecking no"
-echo ""
-echo "  2. Connect via VS Code Remote-SSH to 'rust-dev'"
-echo "  3. Open folder: /workspace/$PROJECT_DIR"
-echo "  4. Run: cargo build"
+echo "SSH Configuration:"
+echo "  - Host alias:        rust-dev"
+echo "  - Config file:       ~/.ssh/config"
+echo "  - Identity file:     $SSH_PRIVATE_KEY"
 echo ""
 echo "Useful Commands:"
 echo "  - Logs:      docker compose -f docker-compose-dev.yml logs -f"
