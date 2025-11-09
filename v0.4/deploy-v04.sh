@@ -142,7 +142,15 @@ fi
 
 # Execute environment-specific deployment script
 print_header "Executing $ENVIRONMENT Deployment"
+
+# Store current directory
+ORIGINAL_DIR=$(pwd)
+
+# Change to environment directory
 cd "$ENV_DIR"
 bash "$DEPLOY_SCRIPT"
+
+# Return to original directory
+cd "$ORIGINAL_DIR"
 
 print_success "Deployment to $ENVIRONMENT environment completed!"

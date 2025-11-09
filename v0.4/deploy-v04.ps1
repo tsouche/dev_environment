@@ -145,7 +145,15 @@ if ($EnvName -ne "dev") {
 
 # Execute environment-specific deployment script
 Write-Header "Executing $EnvName Deployment"
+
+# Store current directory
+$OriginalDir = Get-Location
+
+# Change to environment directory
 Set-Location $EnvDir
 & $DeployScript
+
+# Return to original directory
+Set-Location $OriginalDir
 
 Write-Success "Deployment to $EnvName environment completed!"
