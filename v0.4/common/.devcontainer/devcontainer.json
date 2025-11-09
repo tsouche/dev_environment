@@ -3,6 +3,7 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        "rust-lang.rust-analyzer",
         "panicbit.cargo",
         "fill-labs.dependi",
         "tamasfe.even-better-toml",
