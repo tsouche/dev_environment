@@ -1,19 +1,19 @@
-# Rust Development Environment Builder (env_builder)
+# Rust Environment Builder (env_builder)
 
-**Multi-environment deployment platform for Rust applications with MongoDB**
+**Consistent development, test, and production environment deployment platform for Rust applications with MongoDB**
 
 ---
 
 ## 📋 Overview
 
-The `env_builder` project provides automated deployment scripts to create consistent, containerized Rust development environments across different targets:
+The `env_builder` project provides automated deployment scripts to create consistent, containerized Rust environments across the full development lifecycle:
 
 - **Development** - Local Windows laptop with full debugging tools and SSH access
 - **Test** - Synology NAS with backend services for integration testing
 - **Production** - Synology NAS with optimized, secure server deployment
 
-Each environment is fully containerized using Docker and includes:
-- Rust development environment with toolchain
+All environments are **consistent** - using the same base configuration with environment-specific optimizations. Each environment is fully containerized using Docker and includes:
+- Rust toolchain and build environment (dev only; test and prod use pre-built binaries)
 - MongoDB database with initialization
 - Environment-specific configuration and security
 - Automated setup and deployment scripts
@@ -66,7 +66,7 @@ cd /c/rustdev/env_builder
 .\deploy.ps1 --dev
 ```
 - **Target:** Local laptop
-- **Features:** SSH access, full debugging, Mongo Express
+- **Features:** SSH access, Rust toolchain, full debugging, Mongo Express
 - **Ports:** SSH (2222), App (5665), MongoDB (27017), Mongo Express (8080)
 
 ### Test Environment
@@ -74,7 +74,7 @@ cd /c/rustdev/env_builder
 .\deploy.ps1 --test
 ```
 - **Target:** Synology NAS
-- **Features:** Backend services, Mongo Express for debugging
+- **Features:** Backend services (pre-built binary), Mongo Express for debugging
 - **Access:** Via Synology reverse proxy (HTTPS)
 
 ### Production Environment
@@ -82,7 +82,7 @@ cd /c/rustdev/env_builder
 .\deploy.ps1 --prod
 ```
 - **Target:** Synology NAS
-- **Features:** Optimized server, no debugging tools, enhanced security
+- **Features:** Optimized server (pre-built binary), no debugging tools, enhanced security
 - **Access:** Via Synology reverse proxy (HTTPS)
 
 ---
@@ -170,7 +170,8 @@ docker compose -f docker-compose-dev.yml down
 
 ### Version 0.4 Highlights
 
-✨ **Simplified Multi-Environment Architecture** - Dedicated folders and configs for each environment  
+✨ **Consistent Multi-Environment Architecture** - Same base configuration across dev/test/prod with environment-specific optimizations  
+✨ **Simplified Deployment** - Dedicated folders and configs for each environment  
 ✨ **No Conditional Logic** - Each environment has its own complete configuration  
 ✨ **Clear Security Boundaries** - SSH and debugging tools only where appropriate  
 ✨ **Production Safety** - Password validation and confirmation prompts  
@@ -184,16 +185,19 @@ docker compose -f docker-compose-dev.yml down
 ### Development
 - SSH access enabled (key-based authentication)
 - Debugging tools included (Mongo Express)
+- Full Rust toolchain for compilation
 - Development-grade passwords acceptable
 
 ### Test
 - No SSH access (use `docker exec` if needed)
 - Debugging tools available (Mongo Express)
+- No Rust toolchain (runs pre-built binary)
 - Test-specific credentials required
 
 ### Production
 - No SSH access
 - No debugging tools (Mongo Express disabled)
+- No Rust toolchain (runs pre-built binary)
 - Strong passwords required (validated during deployment)
 - Confirmation prompt before deployment
 - MongoDB not exposed to host
