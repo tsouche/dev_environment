@@ -47,13 +47,52 @@ COLLECTION_3=${COLLECTION_3:-data}
 print_header "Development Environment Deployment"
 
 ################################################################################
+# Check for Existing Project Directory
+################################################################################
+
+EXISTING_PROJECT_PATH="${PROJECT_PATH}/${PROJECT_DIR}"
+if [ -d "$EXISTING_PROJECT_PATH" ]; then
+    echo ""
+    print_warning "Existing project directory found: $EXISTING_PROJECT_PATH"
+    echo ""
+    echo "This directory will be mounted to the container and may contain old files."
+    echo "Options:"
+    echo "  1. Keep existing directory"
+    echo "  2. Delete and start fresh (default)"
+    echo "  3. Cancel deployment"
+    echo ""
+    read -p "Enter choice (1/2/3) [2]: " choice
+    
+    if [ "$choice" == "3" ]; then
+        echo "Deployment cancelled."
+        exit 0
+    elif [ "$choice" == "1" ]; then
+        print_success "Keeping existing project directory"
+    else
+        echo "Deleting existing project directory..."
+        rm -rf "$EXISTING_PROJECT_PATH"
+        print_success "Project directory deleted"
+    fi
+    echo ""
+fi
+
+################################################################################
 # Create Directories
 ################################################################################
 
 print_header "Creating Directory Structure"
-mkdir -p "$SCRIPT_DIR/$PROJECT_DIR/src"
+mkdir -p "${PROJECT_PATH}"
 mkdir -p "$SCRIPT_DIR/mongo-init"
+mkdir -p "${VOLUME_MONGODB_DATA}"
+mkdir -p "${VOLUME_MONGODB_INIT}"
+mkdir -p "${VOLUME_CARGO_CACHE}"
+mkdir -p "${VOLUME_TARGET_CACHE}"
 print_success "Directories created"
+
+echo ""
+print_warning "The project directory will NOT be pre-created."
+print_warning "You should clone the repository from within VS Code after connecting."
+echo ""
 
 ################################################################################
 # SSH Key Setup
@@ -136,67 +175,21 @@ db.createCollection('${COLLECTION_3}');
 print('Database initialized: ${DB_NAME}');
 EOF
 
-print_success "MongoDB init script created"
+# Copy to the mounted volume location
+cp "$SCRIPT_DIR/mongo-init/01-init-db.js" "${VOLUME_MONGODB_INIT}/01-init-db.js"
+
+print_success "MongoDB init script created and copied to volume location"
 
 ################################################################################
 # Create Sample Project
 ################################################################################
 
-print_header "Creating Sample Rust Project"
-
-# Copy VS Code devcontainer configuration
-print_success "Copying VS Code devcontainer configuration"
-mkdir -p "$SCRIPT_DIR/$PROJECT_DIR/.devcontainer"
-cp "$SCRIPT_DIR/../common/.devcontainer/devcontainer.json" \
-   "$SCRIPT_DIR/$PROJECT_DIR/.devcontainer/" 2>/dev/null || true
-
-if [ ! -f "$SCRIPT_DIR/$PROJECT_DIR/Cargo.toml" ]; then
-    cat > "$SCRIPT_DIR/$PROJECT_DIR/Cargo.toml" << EOF
-[package]
-name = "${PROJECT_NAME:-rust_project}"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-mongodb = "2.8"
-tokio = { version = "1.35", features = ["full"] }
-serde = { version = "1.0", features = ["derive"] }
-EOF
-    print_success "Created Cargo.toml"
-else
-    print_success "Cargo.toml exists"
-fi
-
-if [ ! -f "$SCRIPT_DIR/$PROJECT_DIR/src/main.rs" ]; then
-    cat > "$SCRIPT_DIR/$PROJECT_DIR/src/main.rs" << 'EOF'
-use mongodb::{Client, options::ClientOptions};
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Rust Development Environment - v0.4 [DEV]");
-    
-    let mongodb_uri = std::env::var("MONGODB_URI")
-        .unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
-    
-    println!("Connecting to MongoDB at: {}", mongodb_uri);
-    
-    let client_options = ClientOptions::parse(&mongodb_uri).await?;
-    let client = Client::with_options(client_options)?;
-    
-    let db_names = client.list_database_names(None, None).await?;
-    println!("Available databases:");
-    for name in db_names {
-        println!("  - {}", name);
-    }
-    
-    println!("\nMongoDB connection successful!");
-    Ok(())
-}
-EOF
-    print_success "Created src/main.rs"
-else
-    print_success "src/main.rs exists"
-fi
+print_header "Skipping Sample Project Creation"
+print_warning "The actual project should be cloned from git repository:"
+echo "  Repository: ${GIT_REPO}"
+echo ""
+print_warning "Clone the repository after connecting to the container via VS Code."
+echo ""
 
 ################################################################################
 # Build and Deploy
@@ -231,15 +224,23 @@ echo ""
 echo "Configuration:"
 echo "  - Environment:       DEV"
 echo "  - Container:         ${CONTAINER_NAME:-dev-container}"
-echo "  - Project Dir:       $PROJECT_DIR"
+echo "  - Workspace:         /workspace"
+echo "  - Project Path:      ${PROJECT_PATH}"
 echo "  - Database:          $DB_NAME"
 echo ""
 echo "Next Steps:"
 echo "  1. In VS Code, press Ctrl+Shift+P"
 echo "  2. Type 'Remote-SSH: Connect to Host'"
 echo "  3. Select 'rust-dev'"
-echo "  4. Open folder: /workspace/$PROJECT_DIR"
-echo "  5. Run: cargo build"
+echo "  4. Open folder: /workspace"
+echo "  5. Clone repository: ${GIT_REPO}"
+echo "     git clone ${GIT_REPO}"
+echo "  6. Open the cloned project: /workspace/$PROJECT_DIR"
+echo "  7. Run: cargo build"
+echo ""
+echo -e "${YELLOW}IMPORTANT:${NC}"
+print_warning "Clone the repository FROM WITHIN the container (via VS Code terminal)"
+print_warning "DO NOT clone on Windows and mount it - this causes WSL mount issues!"
 echo ""
 echo "SSH Configuration:"
 echo "  - Host alias:        rust-dev"

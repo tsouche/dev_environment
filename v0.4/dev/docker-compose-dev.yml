@@ -34,7 +34,7 @@ services:
       - RUST_LOG=${RUST_LOG:-debug}
     
     volumes:
-      - ${PROJECT_PATH}:/workspace/${PROJECT_DIR}
+      - ${PROJECT_PATH}:/workspace
       - ${VOLUME_CARGO_CACHE}:/home/${USERNAME:-rustdev}/.cargo/registry
       - ${VOLUME_TARGET_CACHE}:/workspace/target
     

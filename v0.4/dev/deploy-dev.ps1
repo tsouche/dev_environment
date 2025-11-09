@@ -49,13 +49,49 @@ $Collection3 = if ($env:COLLECTION_3) { $env:COLLECTION_3 } else { "data" }
 Write-Header "Development Environment Deployment"
 
 ################################################################################
+# Check for Existing Project Directory
+################################################################################
+
+$existingProjectPath = Join-Path $env:PROJECT_PATH $ProjectDir
+if (Test-Path $existingProjectPath) {
+    Write-Host ""
+    Write-Warning-Custom "Existing project directory found: $existingProjectPath"
+    Write-Host ""
+    Write-Host "This directory will be mounted to the container and may contain old files." -ForegroundColor Yellow
+    Write-Host "Options:" -ForegroundColor Cyan
+    Write-Host "  1. Keep existing directory" -ForegroundColor White
+    Write-Host "  2. Delete and start fresh (default)" -ForegroundColor White
+    Write-Host "  3. Cancel deployment" -ForegroundColor White
+    Write-Host ""
+    $choice = Read-Host "Enter choice (1/2/3) [2]"
+    
+    if ($choice -eq "3") {
+        Write-Host "Deployment cancelled." -ForegroundColor Red
+        exit 0
+    }
+    elseif ($choice -eq "1") {
+        Write-Success "Keeping existing project directory"
+    }
+    else {
+        Write-Host "Deleting existing project directory..." -ForegroundColor Yellow
+        Remove-Item -Path $existingProjectPath -Recurse -Force
+        Write-Success "Project directory deleted"
+    }
+    Write-Host ""
+}
+
+################################################################################
 # Create Directories
 ################################################################################
 
 Write-Header "Creating Directory Structure"
 $directories = @(
-    "$ScriptDir\$ProjectDir\src",
-    "$ScriptDir\mongo-init"
+    "$env:PROJECT_PATH",
+    "$ScriptDir\mongo-init",
+    "$env:VOLUME_MONGODB_DATA",
+    "$env:VOLUME_MONGODB_INIT",
+    "$env:VOLUME_CARGO_CACHE",
+    "$env:VOLUME_TARGET_CACHE"
 )
 
 foreach ($dir in $directories) {
@@ -64,6 +100,12 @@ foreach ($dir in $directories) {
     }
 }
 Write-Success "Directories created"
+
+Write-Host ""
+Write-Host "NOTE:" -ForegroundColor Yellow
+Write-Host "  The project directory will NOT be pre-created." -ForegroundColor Yellow
+Write-Host "  You should clone the repository from within VS Code after connecting." -ForegroundColor Yellow
+Write-Host ""
 
 ################################################################################
 # SSH Key Setup
@@ -165,66 +207,24 @@ db.createCollection('$Collection3');
 print('Database initialized: $DbName');
 "@
 
+# Write to local working directory
 $mongoInitScript | Out-File -FilePath "$ScriptDir\mongo-init\01-init-db.js" -Encoding UTF8
-Write-Success "MongoDB init script created"
+
+# Copy to the mounted volume location
+Copy-Item "$ScriptDir\mongo-init\01-init-db.js" "$env:VOLUME_MONGODB_INIT\01-init-db.js" -Force
+
+Write-Success "MongoDB init script created and copied to volume location"
 
 ################################################################################
 # Create Sample Project
 ################################################################################
 
-Write-Header "Creating Sample Rust Project"
-
-$cargoTomlPath = "$ScriptDir\$ProjectDir\Cargo.toml"
-if (-not (Test-Path $cargoTomlPath)) {
-    $cargoToml = @"
-[package]
-name = "$($env:PROJECT_NAME -replace '-','_')"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-mongodb = "2.8"
-tokio = { version = "1.35", features = ["full"] }
-serde = { version = "1.0", features = ["derive"] }
-"@
-    $cargoToml | Out-File -FilePath $cargoTomlPath -Encoding UTF8
-    Write-Success "Created Cargo.toml"
-} else {
-    Write-Success "Cargo.toml exists"
-}
-
-$mainRsPath = "$ScriptDir\$ProjectDir\src\main.rs"
-if (-not (Test-Path $mainRsPath)) {
-    $mainRs = @'
-use mongodb::{Client, options::ClientOptions};
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Rust Development Environment - v0.4 [DEV]");
-    
-    let mongodb_uri = std::env::var("MONGODB_URI")
-        .unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
-    
-    println!("Connecting to MongoDB at: {}", mongodb_uri);
-    
-    let client_options = ClientOptions::parse(&mongodb_uri).await?;
-    let client = Client::with_options(client_options)?;
-    
-    let db_names = client.list_database_names(None, None).await?;
-    println!("Available databases:");
-    for name in db_names {
-        println!("  - {}", name);
-    }
-    
-    println!("\nMongoDB connection successful!");
-    Ok(())
-}
-'@
-    $mainRs | Out-File -FilePath $mainRsPath -Encoding UTF8
-    Write-Success "Created src/main.rs"
-} else {
-    Write-Success "src/main.rs exists"
-}
+Write-Header "Skipping Sample Project Creation"
+Write-Host "The actual project should be cloned from git repository:" -ForegroundColor Yellow
+Write-Host "  Repository: $($env:GIT_REPO)" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "Clone the repository after connecting to the container via VS Code." -ForegroundColor Yellow
+Write-Host ""
 
 ################################################################################
 # Build and Deploy
@@ -259,15 +259,23 @@ Write-Host ""
 Write-Host "Configuration:" -ForegroundColor Blue
 Write-Host "  - Environment:       DEV"
 Write-Host "  - Container:         $($env:CONTAINER_NAME)"
-Write-Host "  - Project Dir:       $ProjectDir"
+Write-Host "  - Workspace:         /workspace"
+Write-Host "  - Project Path:      $($env:PROJECT_PATH)"
 Write-Host "  - Database:          $DbName"
 Write-Host ""
 Write-Host "Next Steps:" -ForegroundColor Blue
 Write-Host "  1. In VS Code, press Ctrl+Shift+P"
 Write-Host "  2. Type 'Remote-SSH: Connect to Host'"
 Write-Host "  3. Select 'rust-dev'"
-Write-Host "  4. Open folder: /workspace/$ProjectDir"
-Write-Host "  5. Run: cargo build"
+Write-Host "  4. Open folder: /workspace"
+Write-Host "  5. Clone repository: $($env:GIT_REPO)"
+Write-Host "     git clone $($env:GIT_REPO)"
+Write-Host "  6. Open the cloned project: /workspace/$ProjectDir"
+Write-Host "  7. Run: cargo build"
+Write-Host ""
+Write-Host "IMPORTANT:" -ForegroundColor Yellow
+Write-Host "  Clone the repository FROM WITHIN the container (via VS Code terminal)" -ForegroundColor Yellow
+Write-Host "  DO NOT clone on Windows and mount it - this causes WSL mount issues!" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "SSH Configuration:" -ForegroundColor Blue
 Write-Host "  - Host alias:        rust-dev"
