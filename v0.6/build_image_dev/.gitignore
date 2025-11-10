@@ -1,0 +1,13 @@
+# Build artifacts
+*.tar
+*.tar.gz
+*.log
+
+# Temporary files
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Docker build cache
+.dockerignore

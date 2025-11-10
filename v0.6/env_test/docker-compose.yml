@@ -1,0 +1,106 @@
+# Docker Compose for Test Environment - v0.5
+# Synology NAS deployment with pre-compiled backend executable
+
+version: '3.8'
+
+# Project name for Synology Container Manager
+name: settest
+
+services:
+  # Backend Container (runtime only - no development tools)
+  backend-container:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - USER_UID=${USER_UID:-1026}
+        - USER_GID=${USER_GID:-110}
+        - USERNAME=${USERNAME:-rustdev}
+        - GROUPNAME=${GROUPNAME:-rustdevteam}
+    
+    image: settest-backend:0.6.0
+    container_name: ${CONTAINER_NAME:-settest-backend}
+    hostname: ${HOSTNAME:-settest-backend-host}
+    restart: unless-stopped
+    
+    ports:
+      - "${APP_PORT:-5645}:8080"
+    
+    environment:
+      # Application port (inside container)
+      - APP_PORT=8080
+      
+      # MongoDB connection
+      - MONGO_HOST=mongo-db
+      - MONGO_PORT=27017
+      - DB_NAME=${DB_NAME:-rust_app_db}
+      - DB_USER=${DB_USER:-app_user}
+      - DB_PASSWORD=${DB_PASSWORD:-app_password}
+      - COLLECTION_1=${COLLECTION_1:-setplayers}
+      - COLLECTION_2=${COLLECTION_2:-setgames}
+      - COLLECTION_3=${COLLECTION_3:-setstats}
+      
+      # Logging
+      - RUST_LOG=${RUST_LOG:-debug}
+      - RUST_BACKTRACE=1
+      
+      # Environment
+      - ENV_STATUS=TESTING
+    
+    volumes:
+      # Only mount data directory (no source code needed)
+      - ${PROJECT_PATH}/data:/data
+    
+    networks:
+      - ${NETWORK_NAME:-test-network}
+    
+    depends_on:
+      - mongo-db
+    
+    # Application runs automatically via CMD in Dockerfile
+
+  # MongoDB Database
+  mongo-db:
+    image: ${MONGO_IMAGE:-mongo:7.0.15-jammy}
+    container_name: ${CONTAINER_MONGODB:-settest-mongodb}
+    hostname: mongo-db
+    restart: unless-stopped
+    
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_ADMIN_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASSWORD:-admin123}
+      MONGO_INITDB_DATABASE: ${DB_NAME:-rust_app_db}
+    
+    volumes:
+      - ${VOLUME_MONGODB_DATA}:/data/db
+      - ${VOLUME_MONGODB_INIT}:/docker-entrypoint-initdb.d:ro
+    
+    networks:
+      - ${NETWORK_NAME:-test-network}
+
+  # Mongo Express - Debug Tool
+  mongo-express:
+    image: ${MONGO_EXPRESS_IMAGE:-mongo-express:1.0.2}
+    container_name: ${CONTAINER_MONGO_EXPRESS:-settest-mongo-express}
+    restart: unless-stopped
+    
+    ports:
+      - "${MONGO_EXPRESS_PORT:-8081}:8081"
+    
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${DB_ADMIN_USER:-admin}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${DB_ADMIN_PASSWORD:-admin123}
+      ME_CONFIG_MONGODB_URL: mongodb://${DB_ADMIN_USER:-admin}:${DB_ADMIN_PASSWORD:-admin123}@mongo-db:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USER:-test}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:-test456}
+    
+    depends_on:
+      - mongo-db
+    
+    networks:
+      - ${NETWORK_NAME:-test-network}
+
+networks:
+  test-network:
+    name: ${NETWORK_NAME:-test-network}
+    driver: bridge
