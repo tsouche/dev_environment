@@ -10,6 +10,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - GIT_USER_NAME=${GIT_USER_NAME}
+        - GIT_USER_EMAIL=${GIT_USER_EMAIL}
     image: dev-container:latest
     
     container_name: ${CONTAINER_NAME:-dev-container}
