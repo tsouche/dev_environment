@@ -49,5 +49,11 @@ See [LICENSE](LICENSE) file.
 
 ---
 
+## 🙏 Acknowledgments
+
+This project was made possible with the assistance of **Claude Sonnet 4.5** by Anthropic. The AI pair programming capabilities helped streamline development, troubleshoot complex Docker configurations, and create robust automation scripts.
+
+---
+
 **Current Version:** v0.5  
 **Last Updated:** November 2025
