@@ -85,8 +85,8 @@ try {
 Write-Header "Removing Docker Images"
 
 $imagesToRemove = @(
-    "v0.5-dev-container",
-    "common-dev-container"
+    "dev-container",
+    "dev-container:latest"
 )
 
 foreach ($image in $imagesToRemove) {

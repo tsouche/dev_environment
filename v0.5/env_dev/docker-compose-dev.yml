@@ -10,6 +10,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: dev-container:latest
     
     container_name: ${CONTAINER_NAME:-dev-container}
     hostname: ${HOSTNAME:-dev-host}
