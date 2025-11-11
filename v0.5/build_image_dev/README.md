@@ -8,10 +8,10 @@
 
 Example:
 ```bash
-./build_and_push_on_nas.sh 0.5.0
+./build_and_push_on_nas.sh 0.5.1
 ```
 
-Default version: `0.5.0` (if not specified)
+Default version: `0.5.1` (if not specified)
 
 ## Prerequisites
 

@@ -1,6 +1,6 @@
 ################################################################################
 # SET Backend Development Environment
-# Base: tsouche/rust_dev_container:v0.5.0
+# Base: tsouche/rust_dev_container:v0.5.1
 # 
 # The base image already provides:
 # - Ubuntu 22.04 LTS
@@ -11,7 +11,7 @@
 # - VS Code extensions auto-install
 # - User rustdev (UID 1026, GID 110)
 ################################################################################
-FROM tsouche/rust_dev_container:v0.5.0
+FROM tsouche/rust_dev_container:v0.5.1
 
 # Override with local user's SSH public key
 # This allows each machine/user to have their own SSH access

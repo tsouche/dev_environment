@@ -1,5 +1,5 @@
 # Docker Compose for Development Environment - v0.5
-# Uses pre-built base image tsouche/rust_dev_container:v0.5.0
+# Uses pre-built base image tsouche/rust_dev_container:v0.5.1
 # Local laptop deployment with SSH and debugging tools
 
 version: '3.8'

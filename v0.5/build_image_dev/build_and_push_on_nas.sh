@@ -28,10 +28,10 @@ REQUIRED_FILES=(
     "devcontainer.json"
 )
 
-# Get version (use 0.5 as default to match Dockerfile comment)
-VERSION="${1:-0.5.0}"
+# Get version (use 0.5.1 as default to match current release)
+VERSION="${1:-0.5.1}"
 
-# Validate version format (e.g., 0.5.0)
+# Validate version format (e.g., 0.5.1)
 if ! echo "${VERSION}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
     echo -e "${RED}ERROR: Invalid version format '${VERSION}'${NC}"
     echo "Expected format: X.Y.Z (e.g., 0.5.0)"
