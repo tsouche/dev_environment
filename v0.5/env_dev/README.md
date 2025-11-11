@@ -623,7 +623,8 @@ C:\path\to\set_backend\src\env_dev\
 ├── docker-compose-dev.yml     # Services orchestration (v0.5)
 ├── deploy-dev.ps1            # Deployment script (v0.5)
 ├── cleanup.ps1               # Cleanup script (v0.5)
-├── 01-init-db.js             # MongoDB initialization
+├── 01-init-db.js             # MongoDB initialization (auto-generated)
+├── authorized_keys            # SSH public key (auto-generated)
 └── README.md                 # This guide
 ```
 

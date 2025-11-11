@@ -1,0 +1,6 @@
+# Auto-generated files - created by deploy-dev.ps1
+authorized_keys
+01-init-db.js
+
+# Temporary/runtime directories
+mongo-init/

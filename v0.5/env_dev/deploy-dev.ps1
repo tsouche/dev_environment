@@ -161,7 +161,6 @@ if (Test-Path $existingProjectPath) {
 Write-Header "Creating Directory Structure"
 $directories = @(
     "$env:PROJECT_PATH",
-    "$ScriptDir\mongo-init",
     "$env:VOLUME_MONGODB_DATA",
     "$env:VOLUME_MONGODB_INIT",
     "$env:VOLUME_CARGO_CACHE",
@@ -307,11 +306,11 @@ db.createCollection('$Collection3');
 print('Database initialized: $DbName');
 "@
 
-# Write to local working directory
-$mongoInitScript | Out-File -FilePath "$ScriptDir\mongo-init\01-init-db.js" -Encoding UTF8
+# Write directly to env_dev directory
+$mongoInitScript | Out-File -FilePath "$ScriptDir\01-init-db.js" -Encoding UTF8
 
 # Copy to the mounted volume location
-Copy-Item "$ScriptDir\mongo-init\01-init-db.js" "$env:VOLUME_MONGODB_INIT\01-init-db.js" -Force
+Copy-Item "$ScriptDir\01-init-db.js" "$env:VOLUME_MONGODB_INIT\01-init-db.js" -Force
 
 Write-Success "MongoDB init script created and copied to volume location"
 

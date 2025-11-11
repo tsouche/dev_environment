@@ -23,32 +23,50 @@ DOCKERFILE="Dockerfile.rustdev"
 
 # Required support files
 REQUIRED_FILES=(
-    "authorized_keys"
+    "authorized_keys.template"
     "install_vscode_extensions.sh"
     "devcontainer.json"
 )
 
-# Get version (use 0.5.1 as default to match current release)
-VERSION="${1:-0.5.1}"
+# Get version (use 'latest' as default if not specified)
+VERSION="${1:-latest}"
 
-# Validate version format (e.g., 0.5.1)
-if ! echo "${VERSION}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+# Validate version format (e.g., 0.5.1) or allow 'latest'
+if [[ "${VERSION}" != "latest" ]] && ! echo "${VERSION}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
     echo -e "${RED}ERROR: Invalid version format '${VERSION}'${NC}"
-    echo "Expected format: X.Y.Z (e.g., 0.5.0)"
+    echo "Expected format: X.Y.Z (e.g., 0.5.1) or 'latest'"
     exit 1
 fi
 
 FULL_IMAGE="${DOCKERHUB_USER}/${IMAGE_NAME}"
-VERSION_TAG="${FULL_IMAGE}:v${VERSION}"
-MAJOR_MINOR=$(echo ${VERSION} | cut -d. -f1,2)
-MINOR_TAG="${FULL_IMAGE}:v${MAJOR_MINOR}"
-LATEST_TAG="${FULL_IMAGE}:latest"
+
+if [[ "${VERSION}" == "latest" ]]; then
+    # Only build and push 'latest' tag
+    VERSION_TAG="${FULL_IMAGE}:latest"
+    MINOR_TAG=""
+    LATEST_TAG="${FULL_IMAGE}:latest"
+else
+    # Build with version tags
+    VERSION_TAG="${FULL_IMAGE}:v${VERSION}"
+    MAJOR_MINOR=$(echo ${VERSION} | cut -d. -f1,2)
+    MINOR_TAG="${FULL_IMAGE}:v${MAJOR_MINOR}"
+    LATEST_TAG="${FULL_IMAGE}:latest"
+fi
 
 echo -e "${BLUE}================================${NC}"
 echo -e "${BLUE}  Build Rust Dev Image on NAS${NC}"
 echo -e "${BLUE}================================${NC}"
 echo ""
 echo "NAS: ${NAS_USER}@${NAS_HOST}:${NAS_PORT}"
+echo "Image: ${FULL_IMAGE}"
+if [[ "${VERSION}" == "latest" ]]; then
+    echo "Version: latest"
+    echo "Tags: latest"
+else
+    echo "Version: ${VERSION}"
+    echo "Tags: v${VERSION}, v${MAJOR_MINOR}, latest"
+fi
+echo ""
 echo "Image: ${FULL_IMAGE}"
 echo "Version: ${VERSION}"
 echo "Tags: v${VERSION}, v${MAJOR_MINOR}, latest"
@@ -137,20 +155,34 @@ echo ""
 
 # Tag versions
 echo -e "${YELLOW}[5/7] Tagging versions...${NC}"
-ssh -p ${NAS_PORT} ${NAS_USER}@${NAS_HOST} << EOSSH
+if [[ "${VERSION}" == "latest" ]]; then
+    # No additional tagging needed for 'latest' only build
+    echo -e "${GREEN}✓ Using single 'latest' tag${NC}"
+else
+    # Tag with version tags
+    ssh -p ${NAS_PORT} ${NAS_USER}@${NAS_HOST} << EOSSH
 sudo -n /usr/local/bin/docker tag ${VERSION_TAG} ${MINOR_TAG}
 sudo -n /usr/local/bin/docker tag ${VERSION_TAG} ${LATEST_TAG}
 EOSSH
-echo -e "${GREEN}✓ Tags created${NC}"
+    echo -e "${GREEN}✓ Tags created${NC}"
+fi
 echo ""
 
 # Push to DockerHub
 echo -e "${YELLOW}[6/7] Pushing to DockerHub...${NC}"
-ssh -p ${NAS_PORT} ${NAS_USER}@${NAS_HOST} << EOSSH
+if [[ "${VERSION}" == "latest" ]]; then
+    # Push only 'latest' tag
+    ssh -p ${NAS_PORT} ${NAS_USER}@${NAS_HOST} << EOSSH
+sudo -n /usr/local/bin/docker push ${LATEST_TAG}
+EOSSH
+else
+    # Push all version tags
+    ssh -p ${NAS_PORT} ${NAS_USER}@${NAS_HOST} << EOSSH
 sudo -n /usr/local/bin/docker push ${VERSION_TAG}
 sudo -n /usr/local/bin/docker push ${MINOR_TAG}
 sudo -n /usr/local/bin/docker push ${LATEST_TAG}
 EOSSH
+fi
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}ERROR: Push failed${NC}"
@@ -172,9 +204,13 @@ echo -e "${GREEN}  Build Complete!${NC}"
 echo -e "${GREEN}================================${NC}"
 echo ""
 echo "Image published to DockerHub:"
-echo "  docker pull ${VERSION_TAG}"
-echo "  docker pull ${MINOR_TAG}"
-echo "  docker pull ${LATEST_TAG}"
+if [[ "${VERSION}" == "latest" ]]; then
+    echo "  docker pull ${LATEST_TAG}"
+else
+    echo "  docker pull ${VERSION_TAG}"
+    echo "  docker pull ${MINOR_TAG}"
+    echo "  docker pull ${LATEST_TAG}"
+fi
 echo ""
 echo "Image info on NAS:"
 ssh -p ${NAS_PORT} ${NAS_USER}@${NAS_HOST} "sudo -n /usr/local/bin/docker images ${FULL_IMAGE} --format 'table {{.Repository}}:{{.Tag}}\t{{.Size}}'"

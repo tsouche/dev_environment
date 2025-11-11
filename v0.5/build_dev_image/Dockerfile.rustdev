@@ -104,8 +104,9 @@ RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/s
 # Generate SSH host keys
 RUN ssh-keygen -A
 
-# authorized_keys will be copied by environment-specific build
-COPY authorized_keys /home/${USERNAME}/.ssh/authorized_keys
+# Copy placeholder authorized_keys (will be overridden by environment-specific builds)
+# Each environment should provide its own authorized_keys file
+COPY authorized_keys.template /home/${USERNAME}/.ssh/authorized_keys
 
 RUN chown ${USER_UID}:${USER_GID} /home/${USERNAME}/.ssh/authorized_keys && \
     chmod 600 /home/${USERNAME}/.ssh/authorized_keys

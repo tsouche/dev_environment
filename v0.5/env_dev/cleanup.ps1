@@ -50,7 +50,7 @@ Write-Host "  - MongoDB data: $env:VOLUME_MONGODB_DATA" -ForegroundColor White
 Write-Host "  - MongoDB init: $env:VOLUME_MONGODB_INIT" -ForegroundColor White
 Write-Host "  - Cargo cache: $env:VOLUME_CARGO_CACHE" -ForegroundColor White
 Write-Host "  - Target cache: $env:VOLUME_TARGET_CACHE" -ForegroundColor White
-Write-Host "  - Local mongo-init: $ScriptDir\mongo-init" -ForegroundColor White
+Write-Host "  - Local MongoDB init script: $ScriptDir\01-init-db.js" -ForegroundColor White
 Write-Host ""
 Write-Host "THIS CANNOT BE UNDONE!" -ForegroundColor Red
 Write-Host ""
@@ -109,8 +109,7 @@ $directoriesToRemove = @(
     @{Path="$env:VOLUME_MONGODB_DATA"; Name="MongoDB data"},
     @{Path="$env:VOLUME_MONGODB_INIT"; Name="MongoDB init"},
     @{Path="$env:VOLUME_CARGO_CACHE"; Name="Cargo cache"},
-    @{Path="$env:VOLUME_TARGET_CACHE"; Name="Target cache"},
-    @{Path="$ScriptDir\mongo-init"; Name="Local mongo-init"}
+    @{Path="$env:VOLUME_TARGET_CACHE"; Name="Target cache"}
 )
 
 foreach ($dir in $directoriesToRemove) {
@@ -125,6 +124,20 @@ foreach ($dir in $directoriesToRemove) {
     } else {
         Write-Host "[-] Not found: $($dir.Name) ($($dir.Path))" -ForegroundColor Gray
     }
+}
+
+# Remove local MongoDB init script file
+$mongoInitFile = "$ScriptDir\01-init-db.js"
+if (Test-Path $mongoInitFile) {
+    try {
+        Remove-Item -Path $mongoInitFile -Force -ErrorAction Stop
+        Write-Success "Removed: Local MongoDB init script ($mongoInitFile)"
+    } catch {
+        Write-Warning-Custom "Failed to remove: Local MongoDB init script ($mongoInitFile)"
+        Write-Host "  Error: $_" -ForegroundColor Red
+    }
+} else {
+    Write-Host "[-] Not found: Local MongoDB init script ($mongoInitFile)" -ForegroundColor Gray
 }
 
 ################################################################################

@@ -2,6 +2,7 @@
 
 ## Quick Start
 
+Build and push with a specific version:
 ```bash
 ./build_and_push_on_nas.sh [VERSION]
 ```
@@ -11,7 +12,12 @@ Example:
 ./build_and_push_on_nas.sh 0.5.1
 ```
 
-Default version: `0.5.1` (if not specified)
+Or build with 'latest' tag only (default):
+```bash
+./build_and_push_on_nas.sh
+```
+
+Default: `latest` tag only (if no version specified)
 
 ## Prerequisites
 
@@ -19,7 +25,7 @@ Default version: `0.5.1` (if not specified)
 2. **DockerHub Credentials**: The script will automatically check and prompt for login if needed
 3. **Required Files**: The following files must exist in this directory:
    - `Dockerfile.rustdev` (main Dockerfile)
-   - `authorized_keys` (SSH keys for rustdev user)
+   - `authorized_keys.template` (placeholder SSH keys file)
    - `install_vscode_extensions.sh` (VS Code extension installer)
    - `devcontainer.json` (Dev container configuration)
 
