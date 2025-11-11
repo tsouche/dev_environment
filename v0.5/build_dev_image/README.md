@@ -3,25 +3,25 @@
 ## Quick Start
 
 Build and push with a specific version:
-```bash
-./build_and_push_on_nas.sh [VERSION]
+```powershell
+.\build_and_push.ps1 [VERSION]
 ```
 
 Example:
-```bash
-./build_and_push_on_nas.sh 0.5.1
+```powershell
+.\build_and_push.ps1 0.5.3
 ```
 
 Or build with 'latest' tag only (default):
-```bash
-./build_and_push_on_nas.sh
+```powershell
+.\build_and_push.ps1
 ```
 
 Default: `latest` tag only (if no version specified)
 
 ## Prerequisites
 
-1. **SSH Access to NAS**: Ensure you can SSH to `thierry@100.100.10.1:5522`
+1. **Docker Desktop**: Ensure Docker is running on Windows
 2. **DockerHub Credentials**: The script will automatically check and prompt for login if needed
 3. **Required Files**: The following files must exist in this directory:
    - `Dockerfile.rustdev` (main Dockerfile)
@@ -32,13 +32,11 @@ Default: `latest` tag only (if no version specified)
 ## What It Does
 
 1. Validates all required files exist locally
-2. Creates temporary directory on NAS (`/tmp/docker_build_rustdev_*`)
-3. Transfers Dockerfile and support files via SCP
-4. **Checks DockerHub login status (prompts for password if needed)**
-5. Builds image on NAS: `tsouche/rust_dev_container:vX.Y.Z`
-6. Tags with: `vX.Y.Z`, `vX.Y`, `latest`
-7. Pushes all tags to DockerHub
-8. Cleans up temporary files on NAS
+2. **Checks Docker is running**
+3. Builds image locally: `tsouche/rust_dev_container:vX.Y.Z`
+4. Tags with: `vX.Y.Z`, `vX.Y`, `latest`
+5. **Checks DockerHub login status (prompts for login if needed)**
+6. Pushes all tags to DockerHub
 
 ## Image Details
 
@@ -46,17 +44,18 @@ Default: `latest` tag only (if no version specified)
 - **User**: rustdev (UID 1026, GID 110)
 - **Rust**: Installed via rustup (stable toolchain)
 - **Features**:
-  - SSH server configured and running
+  - SSH server configured and running with host keys
   - VS Code extensions auto-install on first login
   - MongoDB tools (mongosh)
   - Common dev tools (curl, wget, git, build-essential, etc.)
+  - Empty `/workspace` directory ready for projects
 
 ## Troubleshooting
 
-**Missing files error**: Ensure all 3 support files exist in this directory.
-**SSH connection fails**: Check NAS is accessible at `100.100.10.1:5522`
-**Build fails on NAS**: SSH to NAS and check Docker is running
+**Missing files error**: Ensure all required support files exist in this directory.
+**Docker not running**: Start Docker Desktop
+**Build fails**: Check Docker Desktop has enough resources allocated
 **DockerHub login fails**: Verify your DockerHub credentials are correct
 
 ---
-**Last Updated**: 2025-01-19
+**Last Updated**: 2025-11-11
