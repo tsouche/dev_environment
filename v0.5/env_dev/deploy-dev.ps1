@@ -26,6 +26,80 @@ function Write-Warning-Custom {
     Write-Host "[WARNING] $Message" -ForegroundColor Yellow
 }
 
+function Test-SSHConnection {
+    param(
+        [string]$HostName = "localhost",
+        [int]$Port = 2222,
+        [string]$User = "rustdev",
+        [string]$IdentityFile,
+        [int]$MaxRetries = 5,
+        [int]$RetryDelay = 2
+    )
+    
+    Write-Host ""
+    Write-Host "Testing SSH connectivity to $User@$HostName`:$Port..." -ForegroundColor Yellow
+    
+    for ($i = 1; $i -le $MaxRetries; $i++) {
+        Write-Host "  Attempt $i of $MaxRetries..." -ForegroundColor Gray
+        
+        $sshResult = & ssh -o StrictHostKeyChecking=no `
+                           -o UserKnownHostsFile=nul `
+                           -o ConnectTimeout=5 `
+                           -o BatchMode=yes `
+                           -o LogLevel=ERROR `
+                           -i $IdentityFile `
+                           -p $Port `
+                           "$User@$HostName" `
+                           "echo 'SSH_CONNECTION_OK'" 2>&1
+        
+        if ($LASTEXITCODE -eq 0) {
+            $outputString = $sshResult | Out-String
+            if ($outputString -match "SSH_CONNECTION_OK") {
+                Write-Success "SSH connection successful!"
+                Write-Host "  Connection verified: $User@$HostName`:$Port" -ForegroundColor Green
+                return $true
+            }
+        }
+        
+        if ($i -lt $MaxRetries) {
+            Start-Sleep -Seconds $RetryDelay
+        }
+    }
+    
+    Write-Host "[ERROR] SSH connection failed after $MaxRetries attempts" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Troubleshooting:" -ForegroundColor Yellow
+    Write-Host "  1. Check container is running: docker ps --filter name=$($env:CONTAINER_NAME)" -ForegroundColor White
+    Write-Host "  2. Check container logs: docker logs $($env:CONTAINER_NAME)" -ForegroundColor White
+    Write-Host "  3. Verify SSH key: ssh-keygen -lf $IdentityFile" -ForegroundColor White
+    Write-Host "  4. Test manually: ssh -i $IdentityFile -p $Port $User@$HostName" -ForegroundColor White
+    Write-Host ""
+    return $false
+}
+
+function Show-SSHKeyInfo {
+    param(
+        [string]$PublicKeyPath,
+        [string]$PrivateKeyPath
+    )
+    
+    if (Test-Path $PublicKeyPath) {
+        Write-Host ""
+        Write-Host "SSH Key Information:" -ForegroundColor Cyan
+        Write-Host "  Public key:  $PublicKeyPath" -ForegroundColor White
+        Write-Host "  Private key: $PrivateKeyPath" -ForegroundColor White
+        
+        try {
+            $fingerprint = & ssh-keygen -lf $PublicKeyPath 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "  Fingerprint: $fingerprint" -ForegroundColor White
+            }
+        } catch {
+            Write-Host "  (Unable to get fingerprint)" -ForegroundColor Gray
+        }
+    }
+}
+
 # Load environment variables
 $EnvFile = Join-Path $ScriptDir ".env"
 if (Test-Path $EnvFile) {
@@ -113,6 +187,7 @@ Write-Host ""
 
 Write-Header "Configuring SSH Authentication"
 
+# Check for existing SSH keys
 $sshKeySource = $null
 $sshPrivateKey = $null
 $sshKeyPaths = @(
@@ -124,18 +199,43 @@ foreach ($keyPair in $sshKeyPaths) {
     if (Test-Path $keyPair.Public) {
         $sshKeySource = $keyPair.Public
         $sshPrivateKey = $keyPair.Private
+        Write-Success "Found existing SSH key: $sshKeySource"
         break
     }
 }
 
-if ($null -ne $sshKeySource) {
-    Copy-Item $sshKeySource "$ScriptDir\authorized_keys" -Force
-    Write-Success "Copied SSH public key: $sshKeySource"
-} else {
-    Write-Warning-Custom "No SSH key found - creating placeholder"
-    Write-Warning-Custom "Generate a key with: ssh-keygen -t ed25519 -C 'your_email@example.com'"
-    "# Add your SSH public key here" | Out-File -FilePath "$ScriptDir\authorized_keys" -Encoding ASCII
+# Generate new key if none exists
+if ($null -eq $sshKeySource) {
+    Write-Warning-Custom "No SSH key found. Generating new ed25519 key..."
+    
+    $sshDir = "$env:USERPROFILE\.ssh"
+    if (-not (Test-Path $sshDir)) {
+        New-Item -ItemType Directory -Path $sshDir -Force | Out-Null
+    }
+    
+    $sshPrivateKey = "$sshDir\id_ed25519"
+    $sshKeySource = "$sshDir\id_ed25519.pub"
+    
+    # Generate key using ssh-keygen
+    $email = "$env:USERNAME@$env:COMPUTERNAME"
+    & ssh-keygen -t ed25519 -f $sshPrivateKey -N '""' -C $email
+    
+    if ($LASTEXITCODE -eq 0 -and (Test-Path $sshKeySource)) {
+        Write-Success "SSH key generated: $sshPrivateKey"
+    } else {
+        Write-Host "[ERROR] Failed to generate SSH key" -ForegroundColor Red
+        Write-Host "Please install OpenSSH client or generate a key manually:" -ForegroundColor Yellow
+        Write-Host "  ssh-keygen -t ed25519 -C 'your_email@example.com'" -ForegroundColor Yellow
+        exit 1
+    }
 }
+
+# Copy public key to authorized_keys
+Copy-Item $sshKeySource "$ScriptDir\authorized_keys" -Force
+Write-Success "Configured SSH authentication with key: $sshKeySource"
+
+# Display SSH key information
+Show-SSHKeyInfo -PublicKeyPath $sshKeySource -PrivateKeyPath $sshPrivateKey
 
 ################################################################################
 # Configure SSH Config for VS Code
@@ -238,7 +338,29 @@ Write-Header "Starting Services"
 docker compose -f docker-compose-dev.yml up -d
 Write-Success "Services started"
 
-Start-Sleep -Seconds 3
+Write-Host "Waiting for containers to initialize..." -ForegroundColor Yellow
+Start-Sleep -Seconds 5
+
+################################################################################
+# Test SSH Connectivity
+################################################################################
+
+Write-Header "Verifying SSH Connection"
+
+$sshTestPassed = Test-SSHConnection `
+    -HostName "localhost" `
+    -Port $env:SSH_PORT `
+    -User $env:USERNAME `
+    -IdentityFile $sshPrivateKey `
+    -MaxRetries 5 `
+    -RetryDelay 3
+
+if (-not $sshTestPassed) {
+    Write-Host ""
+    Write-Warning-Custom "SSH connectivity test failed, but continuing deployment."
+    Write-Host "You may need to troubleshoot the connection manually." -ForegroundColor Yellow
+    Write-Host ""
+}
 
 ################################################################################
 # Display Status

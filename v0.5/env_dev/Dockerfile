@@ -1,156 +1,26 @@
 ################################################################################
-# Rust Development Environment - Version 0.5
-# Shared Dockerfile for all environments (dev, test, prod)
+# SET Backend Development Environment
+# Base: tsouche/rust_dev_container:v0.5.0
+# 
+# The base image already provides:
+# - Ubuntu 22.04 LTS
+# - Rust stable toolchain (via rustup)
+# - Build tools (gcc, cmake, pkg-config, libssl-dev)
+# - MongoDB Shell (mongosh)
+# - SSH server configured with host keys
+# - VS Code extensions auto-install
+# - User rustdev (UID 1026, GID 110)
 ################################################################################
-FROM ubuntu:22.04
+FROM tsouche/rust_dev_container:v0.5.0
 
-ARG DEBIAN_FRONTEND=noninteractive
-ENV TZ=Europe/Paris
+# Override with local user's SSH public key
+# This allows each machine/user to have their own SSH access
+USER root
+COPY authorized_keys /home/rustdev/.ssh/authorized_keys
+RUN chown 1026:110 /home/rustdev/.ssh/authorized_keys && \
+    chmod 600 /home/rustdev/.ssh/authorized_keys
 
-################################################################################
-# Install System Dependencies
-################################################################################
-RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    git \
-    vim \
-    nano \
-    htop \
-    tree \
-    unzip \
-    build-essential \
-    pkg-config \
-    libssl-dev \
-    openssh-server \
-    sudo \
-    gnupg \
-    && rm -rf /var/lib/apt/lists/*
-
-################################################################################
-# Install MongoDB Shell (mongosh)
-################################################################################
-RUN curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
-    gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor && \
-    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | \
-    tee /etc/apt/sources.list.d/mongodb-org-7.0.list && \
-    apt-get update && \
-    apt-get install -y mongodb-mongosh && \
-    rm -rf /var/lib/apt/lists/*
-
-################################################################################
-# User Configuration Arguments
-################################################################################
-ARG USERNAME=rustdev
-ARG USER_UID=1026
-ARG GROUPNAME=rustdevteam
-ARG USER_GID=110
-ARG GIT_USER_NAME=""
-ARG GIT_USER_EMAIL=""
-
-################################################################################
-# Create Development User
-################################################################################
-RUN groupadd --gid ${USER_GID} ${GROUPNAME} || true && \
-    useradd --uid ${USER_UID} --gid ${USER_GID} --shell /bin/bash -m ${USERNAME} || true && \
-    usermod -aG sudo ${USERNAME} && \
-    echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/${USERNAME} && \
-    chmod 0440 /etc/sudoers.d/${USERNAME}
-
-WORKDIR /home/${USERNAME}
-
-################################################################################
-# Install Rust Toolchain
-################################################################################
-USER ${USERNAME}
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && \
-    . /home/${USERNAME}/.cargo/env && \
-    /home/${USERNAME}/.cargo/bin/rustup default stable && \
-    /home/${USERNAME}/.cargo/bin/cargo --version && \
-    /home/${USERNAME}/.cargo/bin/rustc --version && \
-    bash -c "echo '. /home/${USERNAME}/.cargo/env' >> /home/${USERNAME}/.bashrc" && \
-    bash -c "echo '. /home/${USERNAME}/.cargo/env' >> /home/${USERNAME}/.profile"
-
-ENV PATH="/home/${USERNAME}/.cargo/bin:${PATH}"
-
-################################################################################
-# Configure Git (if credentials provided)
-################################################################################
-USER ${USERNAME}
-ARG GIT_USER_NAME
-ARG GIT_USER_EMAIL
-RUN if [ -n "${GIT_USER_NAME}" ] && [ -n "${GIT_USER_EMAIL}" ]; then \
-        git config --global user.name "${GIT_USER_NAME}" && \
-        git config --global user.email "${GIT_USER_EMAIL}"; \
-    fi
-
-################################################################################
-# Configure SSH Server
-################################################################################
+WORKDIR /workspace
 USER root
 
-RUN mkdir -p /var/run/sshd && \
-    mkdir -p /home/${USERNAME}/.ssh && \
-    chown ${USER_UID}:${USER_GID} /home/${USERNAME}/.ssh && \
-    chmod 700 /home/${USERNAME}/.ssh
-
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config && \
-    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
-    sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
-    sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config && \
-    sed -i 's/#AuthorizedKeysFile/AuthorizedKeysFile/' /etc/ssh/sshd_config && \
-    sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
-
-# authorized_keys will be copied by environment-specific build
-COPY authorized_keys /home/${USERNAME}/.ssh/authorized_keys
-
-RUN chown ${USER_UID}:${USER_GID} /home/${USERNAME}/.ssh/authorized_keys && \
-    chmod 600 /home/${USERNAME}/.ssh/authorized_keys
-
-EXPOSE 22
-
-################################################################################
-# VS Code Extension Auto-Install Setup
-################################################################################
-USER ${USERNAME}
-
-# Copy extension installation script and devcontainer.json
-COPY install_vscode_extensions.sh /home/${USERNAME}/install_vscode_extensions.sh
-COPY devcontainer.json /home/${USERNAME}/.devcontainer.json
-
-RUN chmod +x /home/${USERNAME}/install_vscode_extensions.sh
-
-# Add message to bashrc to prompt extension installation on first login
-RUN echo '' >> /home/${USERNAME}/.bashrc && \
-    echo '# VS Code Extensions Setup' >> /home/${USERNAME}/.bashrc && \
-    echo 'if [ ! -f ~/.vscode_extensions_installed ]; then' >> /home/${USERNAME}/.bashrc && \
-    echo '    echo ""' >> /home/${USERNAME}/.bashrc && \
-    echo '    echo "========================================="' >> /home/${USERNAME}/.bashrc && \
-    echo '    echo "VS Code Extensions Auto-Install"' >> /home/${USERNAME}/.bashrc && \
-    echo '    echo "========================================="' >> /home/${USERNAME}/.bashrc && \
-    echo '    echo ""' >> /home/${USERNAME}/.bashrc && \
-    echo '    echo "Installing recommended VS Code extensions..."' >> /home/${USERNAME}/.bashrc && \
-    echo '    if ~/install_vscode_extensions.sh 2>/dev/null; then' >> /home/${USERNAME}/.bashrc && \
-    echo '        touch ~/.vscode_extensions_installed' >> /home/${USERNAME}/.bashrc && \
-    echo '        echo ""' >> /home/${USERNAME}/.bashrc && \
-    echo '        echo "✓ Extensions installed successfully!"' >> /home/${USERNAME}/.bashrc && \
-    echo '        echo "  Please reload VS Code window: Ctrl+Shift+P -> Reload Window"' >> /home/${USERNAME}/.bashrc && \
-    echo '        echo ""' >> /home/${USERNAME}/.bashrc && \
-    echo '    else' >> /home/${USERNAME}/.bashrc && \
-    echo '        echo ""' >> /home/${USERNAME}/.bashrc && \
-    echo '        echo "Note: Extensions will be installed on next terminal session."' >> /home/${USERNAME}/.bashrc && \
-    echo '        echo "Or run manually: ~/install_vscode_extensions.sh"' >> /home/${USERNAME}/.bashrc && \
-    echo '        echo ""' >> /home/${USERNAME}/.bashrc && \
-    echo '    fi' >> /home/${USERNAME}/.bashrc && \
-    echo 'fi' >> /home/${USERNAME}/.bashrc
-
-################################################################################
-# Workspace Setup
-################################################################################
-USER root
-RUN mkdir -p /workspace && chown ${USER_UID}:${USER_GID} /workspace
-
-################################################################################
-# Container Startup
-################################################################################
 CMD ["/usr/sbin/sshd", "-D"]

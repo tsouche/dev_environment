@@ -1,0 +1,10 @@
+# SSH Authorized Keys - Placeholder
+# This file will be overridden by environment-specific builds
+# 
+# Each deployment environment should provide its own authorized_keys file
+# containing the public SSH keys that should have access to the container.
+#
+# Format: One public key per line
+# Example:
+# ssh-ed25519 AAAAC3Nza... user@hostname
+# ssh-rsa AAAAB3Nza... user@hostname
