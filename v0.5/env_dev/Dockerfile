@@ -32,14 +32,40 @@ RUN if [ -n "${GIT_USER_NAME}" ] && [ -n "${GIT_USER_EMAIL}" ]; then \
         git config --global user.email "${GIT_USER_EMAIL}"; \
     fi
 
-# Add development service aliases
+# Add development service aliases and functions
 RUN echo '' >> /home/rustdev/.bashrc && \
-    echo '# Development Service Aliases' >> /home/rustdev/.bashrc && \
+    echo '# Development Service Aliases and Functions' >> /home/rustdev/.bashrc && \
     echo 'alias dev-h="curl http://localhost:8080/health && echo \"\""' >> /home/rustdev/.bashrc && \
     echo 'alias dev-v="curl http://localhost:8080/version && echo \"\""' >> /home/rustdev/.bashrc && \
     echo 'alias dev-s="curl -X POST http://localhost:8080/shutdown && echo \"\""' >> /home/rustdev/.bashrc && \
-    echo 'alias dev-c="curl -X POST http://localhost:8080/clear && echo \"\""' >> /home/rustdev/.bashrc && \
-    echo 'alias dev-l="dev-s && cargo run &"' >> /home/rustdev/.bashrc
+    echo 'alias dev-c="curl -X POST http://localhost:8080/clear?db && echo \"\""' >> /home/rustdev/.bashrc && \
+    echo '' >> /home/rustdev/.bashrc && \
+    echo 'dev-l() {' >> /home/rustdev/.bashrc && \
+    echo '    local port=${1:-5645}  # Default port 5645, or pass as argument' >> /home/rustdev/.bashrc && \
+    echo '    cd /workspace/set_backend' >> /home/rustdev/.bashrc && \
+    echo '    ' >> /home/rustdev/.bashrc && \
+    echo '    if curl -s http://localhost:$port/health > /dev/null 2>&1; then' >> /home/rustdev/.bashrc && \
+    echo '        echo "Shutting down server on port $port..."' >> /home/rustdev/.bashrc && \
+    echo '        curl -X POST http://localhost:$port/shutdown 2>/dev/null' >> /home/rustdev/.bashrc && \
+    echo '        sleep 2' >> /home/rustdev/.bashrc && \
+    echo '    else' >> /home/rustdev/.bashrc && \
+    echo '        echo "Server not running on port $port"' >> /home/rustdev/.bashrc && \
+    echo '    fi' >> /home/rustdev/.bashrc && \
+    echo '    ' >> /home/rustdev/.bashrc && \
+    echo '    echo "Starting server..."' >> /home/rustdev/.bashrc && \
+    echo '    nohup cargo run > /dev/null 2>&1 &' >> /home/rustdev/.bashrc && \
+    echo '    echo "Server started (PID: $!)"' >> /home/rustdev/.bashrc && \
+    echo '    ' >> /home/rustdev/.bashrc && \
+    echo '    # Wait for server to be ready' >> /home/rustdev/.bashrc && \
+    echo '    for i in {1..10}; do' >> /home/rustdev/.bashrc && \
+    echo '        if curl -s http://localhost:$port/health > /dev/null 2>&1; then' >> /home/rustdev/.bashrc && \
+    echo '            echo "Server is ready on port $port"' >> /home/rustdev/.bashrc && \
+    echo '            return 0' >> /home/rustdev/.bashrc && \
+    echo '        fi' >> /home/rustdev/.bashrc && \
+    echo '        sleep 1' >> /home/rustdev/.bashrc && \
+    echo '    done' >> /home/rustdev/.bashrc && \
+    echo '    echo "Server failed to start within 10 seconds"' >> /home/rustdev/.bashrc && \
+    echo '}' >> /home/rustdev/.bashrc
 
 USER root
 WORKDIR /workspace

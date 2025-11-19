@@ -8,13 +8,13 @@
 
 ##### 1. Development Service Aliases
 
-Added bash aliases to `.bashrc` for easy access to development service endpoints:
+Added bash aliases and functions to `.bashrc` for easy access to development service endpoints:
 
 - `dev-h` - Health check: `curl http://localhost:8080/health && echo ""`
 - `dev-v` - Version info: `curl http://localhost:8080/version && echo ""`  
 - `dev-s` - Shutdown service: `curl -X POST http://localhost:8080/shutdown && echo ""`
-- `dev-c` - Clear data: `curl -X POST http://localhost:8080/clear && echo ""`
-- `dev-l` - Launch service: `dev-s && cargo run &` (shutdown then restart in background)
+- `dev-c` - Clear data: `curl -X POST http://localhost:8080/clear?db && echo ""` (takes 'db' argument)
+- `dev-l(port)` - Smart launch function: Graceful shutdown + restart with health checking (optional port parameter, default 5645)
 
 ##### 2. Port Configuration Update
 

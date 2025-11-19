@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **CHANGELOG.md**: Added comprehensive changelog file for version tracking
-- **Development Service Aliases**: Added convenient bash aliases (`dev-h`, `dev-v`, `dev-s`, `dev-c`, `dev-l`) for quick API access from container terminal
+- **Enhanced Development Service Aliases**: added improved bash aliases and functions for quick API access from container terminal
+  - `dev-c`: Now takes 'db' argument for database clearing
+  - `dev-l`: Replaced with smart launch function with port parameter and health checking
 - **Port Configuration**: Updated default application port to 5645 for development environment
 
 ### Changed

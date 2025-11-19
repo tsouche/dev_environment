@@ -381,7 +381,7 @@ cargo test
 
 ### 4. Development Service Aliases
 
-**Convenient aliases** are available for quick API testing:
+**Convenient aliases and functions** are available for quick API testing:
 
 ```bash
 # Health check
@@ -393,19 +393,20 @@ dev-v
 # Shutdown service
 dev-s
 
-# Clear data
+# Clear data (takes 'db' argument)
 dev-c
 
-# Launch service (shutdown + restart in background)
+# Launch service (function with optional port, default 5645)
 dev-l
+dev-l 8080  # Use different port
 ```
 
 **Alias Details:**
 - `dev-h`: `curl http://localhost:8080/health && echo ""`
 - `dev-v`: `curl http://localhost:8080/version && echo ""`
 - `dev-s`: `curl -X POST http://localhost:8080/shutdown && echo ""`
-- `dev-c`: `curl -X POST http://localhost:8080/clear && echo ""`
-- `dev-l`: `dev-s && cargo run &` (shutdown then restart in background)
+- `dev-c`: `curl -X POST http://localhost:8080/clear?db && echo ""`
+- `dev-l(port)`: Smart launch function (shutdown + restart with health check)
 
 ### 5. Development Loop
 
@@ -772,7 +773,7 @@ Mongo Express:     http://localhost:8080 (dev/dev123)
 
 - **Environment**: v0.5.5
 - **Base Image**: tsouche/rust_dev_container:v0.5.5
-- **New in v0.5.5**: Automatic SSH key generation, development service aliases (`dev-h`, `dev-v`, `dev-s`, `dev-c`, `dev-l`), and port updates
+- **New in v0.5.5**: Automatic SSH key generation, enhanced development service aliases and functions, and port updates
 
 ---
 
@@ -785,7 +786,7 @@ Mongo Express:     http://localhost:8080 (dev/dev123)
 - 🐛 **Debug builds** enabled by default for development
 - 🚀 **VS Code extensions** auto-install on first connection
 - ⚙️ **User rustdev** (UID 1026, GID 110) for consistency across environments
-- 🏷️ **Development aliases** available: `dev-h`, `dev-v`, `dev-s`, `dev-c`, `dev-l` for quick API testing
+- 🏷️ **Enhanced development aliases** available: `dev-h`, `dev-v`, `dev-s`, `dev-c` (with db arg), `dev-l` (smart function with port parameter)
 
 ---
 
