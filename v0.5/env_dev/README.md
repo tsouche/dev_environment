@@ -1,4 +1,4 @@
-# Development Environment Guide - v0.5
+# Development Environment Guide - v0.5.5
 
 Complete guide for deploying and using the local development container on Windows laptop.
 
@@ -20,7 +20,7 @@ Complete guide for deploying and using the local development container on Window
 
 - **Platform**: Windows laptop with Docker Desktop
 - **Container**: Rust development environment with SSH access
-- **Base Image**: `tsouche/rust_dev_container:v0.5.0`
+- **Base Image**: `tsouche/rust_dev_container:v0.5.5`
 - **Services**: Dev container + MongoDB + Mongo Express
 - **Access**: VS Code Remote SSH to localhost
 
@@ -122,7 +122,7 @@ docker ps
 
 ## SSH Configuration
 
-### Automatic Configuration (v0.5+)
+### Automatic Configuration (v0.5.5+)
 
 The deployment script automatically:
 1. Detects existing SSH keys (`~/.ssh/id_ed25519` or `~/.ssh/id_rsa`)
@@ -132,7 +132,7 @@ The deployment script automatically:
 
 **Generated SSH Config:**
 ```ssh-config
-# Rust Development Environment v0.5 - Auto-generated
+# Rust Development Environment v0.5.5 - Auto-generated
 Host rust-dev
     HostName localhost
     Port 2222
@@ -216,7 +216,7 @@ cargo build
 
 ## Deployment Scripts
 
-### deploy-dev.ps1 (v0.5)
+### deploy-dev.ps1 (v0.5.5)
 
 **Purpose**: Complete environment deployment
 
@@ -226,7 +226,7 @@ cargo build
 ```
 
 **Features:**
-- Automatic SSH key generation (new in v0.5)
+- Automatic SSH key generation (new in v0.5.5)
 - Project directory handling (keep/delete/cancel)
 - Directory structure creation
 - MongoDB initialization
@@ -243,7 +243,7 @@ Options:
 Enter choice (1/2/3) [2]:
 ```
 
-### cleanup.ps1 (v0.5)
+### cleanup.ps1 (v0.5.5)
 
 **Purpose**: Complete environment cleanup
 
@@ -276,18 +276,18 @@ Enter choice (1/2/3) [2]:
 | Service | Port | Access | Description |
 |---------|------|--------|-------------|
 | **SSH** | 2222 | `ssh rust-dev` | VS Code Remote, terminal access |
-| **Backend** | 5665 | `http://localhost:5665` | Application (after build/run) |
+| **Backend** | 5645 | `http://localhost:5645` | Application (after build/run) |
 | **MongoDB** | 27017 | `mongodb://localhost:27017` | Database |
 | **Mongo Express** | 8080 | `http://localhost:8080` | Database admin UI |
 
 ### Environment Variables
 
-Defined in `.env` (v0.5):
+Defined in `.env` (v0.5.5):
 
 ```properties
 # Ports
 SSH_PORT=2222
-APP_PORT=5665
+APP_PORT=5645
 MONGO_PORT=27017
 MONGO_EXPRESS_PORT=8080
 
@@ -379,7 +379,35 @@ cargo run
 cargo test
 ```
 
-### 4. Development Loop
+### 4. Development Service Aliases
+
+**Convenient aliases** are available for quick API testing:
+
+```bash
+# Health check
+dev-h
+
+# Version info
+dev-v
+
+# Shutdown service
+dev-s
+
+# Clear data
+dev-c
+
+# Launch service (shutdown + restart in background)
+dev-l
+```
+
+**Alias Details:**
+- `dev-h`: `curl http://localhost:8080/health && echo ""`
+- `dev-v`: `curl http://localhost:8080/version && echo ""`
+- `dev-s`: `curl -X POST http://localhost:8080/shutdown && echo ""`
+- `dev-c`: `curl -X POST http://localhost:8080/clear && echo ""`
+- `dev-l`: `dev-s && cargo run &` (shutdown then restart in background)
+
+### 5. Development Loop
 
 **Inside container:**
 ```bash
@@ -618,11 +646,11 @@ rm -rf ~/.vscode-server
 
 ```
 C:\path\to\set_backend\src\env_dev\
-├── .env                       # Environment configuration (v0.5)
+├── .env                       # Environment configuration (v0.5.5)
 ├── Dockerfile                 # Dev container definition
-├── docker-compose-dev.yml     # Services orchestration (v0.5)
-├── deploy-dev.ps1            # Deployment script (v0.5)
-├── cleanup.ps1               # Cleanup script (v0.5)
+├── docker-compose-dev.yml     # Services orchestration (v0.5.5)
+├── deploy-dev.ps1            # Deployment script (v0.5.5)
+├── cleanup.ps1               # Cleanup script (v0.5.5)
 ├── 01-init-db.js             # MongoDB initialization (auto-generated)
 ├── authorized_keys            # SSH public key (auto-generated)
 └── README.md                 # This guide
@@ -735,28 +763,29 @@ docker compose -f docker-compose-dev.yml logs -f dev-container
 ```
 VS Code Remote:    ssh rust-dev
 SSH Manual:        ssh -p 2222 rustdev@localhost
-Backend:           http://localhost:5665
+Backend:           http://localhost:5645
 MongoDB:           mongodb://localhost:27017
 Mongo Express:     http://localhost:8080 (dev/dev123)
 ```
 
 ### Version Summary
 
-- **Environment**: v0.5
-- **Base Image**: tsouche/rust_dev_container:v0.5.0
-- **New in v0.5**: Automatic SSH key generation and configuration
+- **Environment**: v0.5.5
+- **Base Image**: tsouche/rust_dev_container:v0.5.5
+- **New in v0.5.5**: Automatic SSH key generation, development service aliases (`dev-h`, `dev-v`, `dev-s`, `dev-c`, `dev-l`), and port updates
 
 ---
 
 ## Notes
 
-- 🔑 **SSH keys auto-generated** if none exist (new in v0.5)
+- 🔑 **SSH keys auto-generated** if none exist (new in v0.5.5)
 - 📂 **Clone projects inside container** - NOT on Windows!
 - 💾 **Cargo/target caches persist** between container restarts
 - 🔄 **MongoDB data persists** across deployments
 - 🐛 **Debug builds** enabled by default for development
 - 🚀 **VS Code extensions** auto-install on first connection
 - ⚙️ **User rustdev** (UID 1026, GID 110) for consistency across environments
+- 🏷️ **Development aliases** available: `dev-h`, `dev-v`, `dev-s`, `dev-c`, `dev-l` for quick API testing
 
 ---
 

@@ -1,5 +1,5 @@
-# Docker Compose for Development Environment - v0.5
-# Uses pre-built base image tsouche/rust_dev_container:v0.5.1
+# Docker Compose for Development Environment - v0.5.5
+# Uses pre-built base image tsouche/rust_dev_container:latest
 # Local laptop deployment with SSH and debugging tools
 
 version: '3.8'
@@ -34,6 +34,8 @@ services:
     volumes:
       - ${PROJECT_PATH}:/workspace
       - ${VOLUME_CARGO_CACHE}:/home/${USERNAME:-rustdev}/.cargo/registry
+      - ${VOLUME_CARGO_GIT_CACHE}:/home/${USERNAME:-rustdev}/.cargo/git
+      - ${VOLUME_RUSTUP_CACHE}:/home/${USERNAME:-rustdev}/.rustup
       - ${VOLUME_TARGET_CACHE}:/workspace/target
     
     networks:

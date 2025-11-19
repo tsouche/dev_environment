@@ -1,5 +1,5 @@
 ################################################################################
-# Rust Development Environment - Version 0.5
+# Rust Development Environment - Version 0.5.5
 # Shared Dockerfile for all environments (dev, test, prod)
 ################################################################################
 FROM ubuntu:22.04
@@ -72,6 +72,20 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
     bash -c "echo '. /home/${USERNAME}/.cargo/env' >> /home/${USERNAME}/.profile"
 
 ENV PATH="/home/${USERNAME}/.cargo/bin:${PATH}"
+
+# Configure Rust cache directories and environment variables for optimal performance
+RUN mkdir -p /home/${USERNAME}/.cargo/git/db && \
+    mkdir -p /home/${USERNAME}/.cargo/registry/index && \
+    mkdir -p /home/${USERNAME}/.cargo/registry/cache && \
+    mkdir -p /home/${USERNAME}/.cargo/registry/src && \
+    mkdir -p /home/${USERNAME}/.rustup
+
+# Set Rust environment variables for optimal caching and performance
+ENV CARGO_HOME=/home/${USERNAME}/.cargo
+ENV RUSTUP_HOME=/home/${USERNAME}/.rustup
+ENV CARGO_INCREMENTAL=1
+ENV CARGO_BUILD_JOBS=4
+ENV RUST_BACKTRACE=1
 
 ################################################################################
 # Configure Git (if credentials provided)

@@ -55,5 +55,5 @@ This project was made possible with the assistance of **Claude Sonnet 4.5** by A
 
 ---
 
-**Current Version:** v0.5  
+**Current Version:** v0.5.5  
 **Last Updated:** November 2025

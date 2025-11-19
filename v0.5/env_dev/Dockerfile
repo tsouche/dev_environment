@@ -32,6 +32,15 @@ RUN if [ -n "${GIT_USER_NAME}" ] && [ -n "${GIT_USER_EMAIL}" ]; then \
         git config --global user.email "${GIT_USER_EMAIL}"; \
     fi
 
+# Add development service aliases
+RUN echo '' >> /home/rustdev/.bashrc && \
+    echo '# Development Service Aliases' >> /home/rustdev/.bashrc && \
+    echo 'alias dev-h="curl http://localhost:8080/health && echo \"\""' >> /home/rustdev/.bashrc && \
+    echo 'alias dev-v="curl http://localhost:8080/version && echo \"\""' >> /home/rustdev/.bashrc && \
+    echo 'alias dev-s="curl -X POST http://localhost:8080/shutdown && echo \"\""' >> /home/rustdev/.bashrc && \
+    echo 'alias dev-c="curl -X POST http://localhost:8080/clear && echo \"\""' >> /home/rustdev/.bashrc && \
+    echo 'alias dev-l="dev-s && cargo run &"' >> /home/rustdev/.bashrc
+
 USER root
 WORKDIR /workspace
 

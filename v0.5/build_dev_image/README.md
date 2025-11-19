@@ -9,7 +9,7 @@ Build and push with a specific version:
 
 Example:
 ```powershell
-.\build_and_push.ps1 0.5.3
+.\build_and_push.ps1 0.5.5
 ```
 
 Or build with 'latest' tag only (default):
@@ -58,4 +58,4 @@ Default: `latest` tag only (if no version specified)
 **DockerHub login fails**: Verify your DockerHub credentials are correct
 
 ---
-**Last Updated**: 2025-11-11
+**Last Updated**: 2025-11-19
