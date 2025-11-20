@@ -163,9 +163,10 @@ $directories = @(
     "$env:PROJECT_PATH",
     "$env:VOLUME_MONGODB_DATA",
     "$env:VOLUME_MONGODB_INIT",
-    "$env:VOLUME_CARGO_CACHE",
-    "$env:VOLUME_CARGO_GIT_CACHE",
-    "$env:VOLUME_RUSTUP_CACHE",
+    # Commented out since these volumes are no longer mounted
+    # "$env:VOLUME_CARGO_CACHE",
+    # "$env:VOLUME_CARGO_GIT_CACHE",
+    # "$env:VOLUME_RUSTUP_CACHE",
     "$env:VOLUME_TARGET_CACHE"
 )
 
