@@ -5,8 +5,9 @@
 
 $ErrorActionPreference = "Stop"
 
-# Path to the v0.5 deployment script
-$deployScriptPath = Join-Path $PSScriptRoot "v0.5\env_dev\deploy-dev.ps1"
+# Path to the v0.5 env_dev directory
+$envDevDir = Join-Path $PSScriptRoot "v0.5\env_dev"
+$deployScriptPath = Join-Path $envDevDir "deploy-dev.ps1"
 
 if (-not (Test-Path $deployScriptPath)) {
     Write-Host "[ERROR] Deployment script not found: $deployScriptPath" -ForegroundColor Red
@@ -17,5 +18,10 @@ Write-Host "Triggering v0.5 development environment deployment..." -ForegroundCo
 Write-Host "Script: $deployScriptPath" -ForegroundColor Gray
 Write-Host ""
 
-# Execute the deployment script
-& $deployScriptPath
+# Change to the env_dev directory and execute the deployment script
+Push-Location $envDevDir
+try {
+    & ".\deploy-dev.ps1"
+} finally {
+    Pop-Location
+}
