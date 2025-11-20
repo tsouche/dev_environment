@@ -35,10 +35,10 @@ RUN if [ -n "${GIT_USER_NAME}" ] && [ -n "${GIT_USER_EMAIL}" ]; then \
 # Add development service aliases and functions
 RUN echo '' >> /home/rustdev/.bashrc && \
     echo '# Development Service Aliases and Functions' >> /home/rustdev/.bashrc && \
-    echo 'alias dev-h="curl http://localhost:8080/health && echo \"\""' >> /home/rustdev/.bashrc && \
-    echo 'alias dev-v="curl http://localhost:8080/version && echo \"\""' >> /home/rustdev/.bashrc && \
-    echo 'alias dev-s="curl -X POST http://localhost:8080/shutdown && echo \"\""' >> /home/rustdev/.bashrc && \
-    echo 'alias dev-c="curl -X POST http://localhost:8080/clear?db && echo \"\""' >> /home/rustdev/.bashrc && \
+    echo 'alias dev-h="curl http://localhost:5645/health && echo \"\""' >> /home/rustdev/.bashrc && \
+    echo 'alias dev-v="curl http://localhost:5645/version && echo \"\""' >> /home/rustdev/.bashrc && \
+    echo 'alias dev-s="curl -X POST http://localhost:5645/shutdown && echo \"\""' >> /home/rustdev/.bashrc && \
+    echo 'alias dev-c="curl -X POST http://localhost:5645/clear?db && echo \"\""' >> /home/rustdev/.bashrc && \
     echo '' >> /home/rustdev/.bashrc && \
     echo 'dev-l() {' >> /home/rustdev/.bashrc && \
     echo '    local port=${1:-5645}  # Default port 5645, or pass as argument' >> /home/rustdev/.bashrc && \
